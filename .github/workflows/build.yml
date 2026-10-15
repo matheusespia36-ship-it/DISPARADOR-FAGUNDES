@@ -1,4 +1,4 @@
-name: Compilar APK Autonomo Local (Node.js Embutido Oficial)
+name: Compilar APK Autonomo Local (Node.js Embutido)
 
 on:
   push:
@@ -23,32 +23,156 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Instalar Dependencias do Projeto
+      - name: Baixar Binario Node.js ARM64 Nativo
+        run: |
+          sudo apt-get update && sudo apt-get install -y zstd binutils python3 zip
+          python3 scripts/download_node.py
+          
+          ar x node.deb
+          if [ -f data.tar.zst ]; then tar --zstd -xf data.tar.zst; fi
+          if [ -f data.tar.xz ]; then tar -xf data.tar.xz; fi
+          if [ -f data.tar.gz ]; then tar -xf data.tar.gz; fi
+          
+          NODE_BIN=$(find . -type f -name "node" | head -n 1)
+          if [ -n "$NODE_BIN" ]; then
+            mkdir -p lib_node_temp
+            cp "$NODE_BIN" lib_node_temp/libnode.so
+          else
+            exit 1
+          fi
+
+      - name: Preparar Projeto e Compactar Backend
         run: |
           npm install --no-audit --no-fund
-          npm install capacitor-nodejs --save
-          
           mkdir -p www
           cp public/index.html www/index.html
 
-      - name: Preparar Backend para o App
-        run: |
-          # O plugin capacitor-nodejs espera que o backend fique nesta pasta:
-          mkdir -p nodejs-assets/nodejs-project
-          cp server.js package.json nodejs-assets/nodejs-project/
+          mkdir -p backend_pack
+          cp server.js package.json backend_pack/
+          cp -r node_modules backend_pack/ || true
           
-          # Instala apenas as bibliotecas de producao no backend
-          cd nodejs-assets/nodejs-project
-          npm install --production --no-audit --no-fund
-          cd ../..
+          cd backend_pack
+          zip -r -q ../backend.zip .
+          cd ..
 
-      - name: Gerar Projeto Android
-        run: |
           rm -rf android
           npx @capacitor/cli add android
           npx @capacitor/cli sync android
 
-          # Permite comunicação interna HTTP no localhost do celular
+          mkdir -p android/app/src/main/jniLibs/arm64-v8a
+          cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
+
+          mkdir -p android/app/src/main/assets
+          cp backend.zip android/app/src/main/assets/
+
+          PACKAGE_PATH="android/app/src/main/java/com/disparador/app"
+          mkdir -p "$PACKAGE_PATH"
+          cat << 'JAVA' > "$PACKAGE_PATH/MainActivity.java"
+          package com.disparador.app;
+
+          import android.os.Bundle;
+          import android.content.Context;
+          import android.app.AlertDialog;
+          import com.getcapacitor.BridgeActivity;
+          import java.io.*;
+          import java.util.zip.ZipEntry;
+          import java.util.zip.ZipInputStream;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  iniciarNodeJSInternal();
+              }
+
+              private void iniciarNodeJSInternal() {
+                  new Thread(() -> {
+                      try {
+                          Context context = getApplicationContext();
+                          File filesDir = context.getFilesDir();
+                          File nodeDir = new File(filesDir, "nodejs-project");
+
+                          File serverFile = new File(nodeDir, "server.js");
+                          if (!serverFile.exists()) {
+                              unzipAsset(context, "backend.zip", nodeDir);
+                          }
+
+                          String nodeBinary = context.getApplicationInfo().nativeLibraryDir + "/libnode.so";
+
+                          if (new File(nodeBinary).exists() && serverFile.exists()) {
+                              ProcessBuilder pb = new ProcessBuilder(nodeBinary, serverFile.getAbsolutePath());
+                              pb.directory(nodeDir);
+                              pb.environment().put("PORT", "3000");
+                              pb.environment().put("HOME", filesDir.getAbsolutePath());
+                              
+                              File logFile = new File(filesDir, "node.log");
+                              pb.redirectErrorStream(true);
+                              pb.redirectOutput(logFile);
+                              
+                              Process p = pb.start();
+                              int exitCode = p.waitFor();
+                              
+                              // Se o servidor fechar (erro), lê o arquivo e joga na tela
+                              if (exitCode != 0) {
+                                  lerLogEMostrarNaTela(logFile);
+                              }
+                          }
+                      } catch (Exception e) {
+                          e.printStackTrace();
+                      }
+                  }).start();
+              }
+              
+              private void lerLogEMostrarNaTela(File logFile) {
+                  try {
+                      BufferedReader br = new BufferedReader(new FileReader(logFile));
+                      StringBuilder sb = new StringBuilder();
+                      String line;
+                      while ((line = br.readLine()) != null) {
+                          sb.append(line).append("\n");
+                      }
+                      br.close();
+                      String fullLog = sb.toString();
+                      final String errorMsg = fullLog.length() > 1000 ? fullLog.substring(fullLog.length() - 1000) : fullLog;
+                      
+                      runOnUiThread(() -> {
+                          new AlertDialog.Builder(MainActivity.this)
+                              .setTitle("Erro Fatal no Servidor")
+                              .setMessage("O motor Node.js falhou ao iniciar:\n\n" + errorMsg)
+                              .setPositiveButton("Entendi", null)
+                              .setCancelable(false)
+                              .show();
+                      });
+                  } catch (Exception e) {}
+              }
+
+              private void unzipAsset(Context context, String assetName, File destDir) throws IOException {
+                  destDir.mkdirs();
+                  InputStream is = context.getAssets().open(assetName);
+                  ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+                  ZipEntry ze;
+                  byte[] buffer = new byte[8192];
+                  
+                  while ((ze = zis.getNextEntry()) != null) {
+                      File file = new File(destDir, ze.getName());
+                      if (ze.isDirectory()) {
+                          file.mkdirs();
+                      } else {
+                          file.getParentFile().mkdirs();
+                          FileOutputStream fos = new FileOutputStream(file);
+                          int count;
+                          while ((count = zis.read(buffer)) != -1) {
+                              fos.write(buffer, 0, count);
+                          }
+                          fos.close();
+                      }
+                      zis.closeEntry();
+                  }
+                  zis.close();
+              }
+          }
+          JAVA
+
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
 
       - name: Compilar APK Debug
