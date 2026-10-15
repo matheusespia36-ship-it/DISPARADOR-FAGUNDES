@@ -26,23 +26,39 @@ jobs:
       - name: Baixar Binario Node.js ARM64 Nativo para Android
         run: |
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
+          sudo apt-get update && sudo apt-get install -y zstd binutils curl
           
-          # Obtem o indice de pacotes do Termux
-          curl -sL "https://packages-cf.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages.xz" | xz -d > Packages
+          # Baixa indice de pacotes em texto puro
+          curl -sL -A "Mozilla/5.0" "https://packages-cf.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages" -o Packages || true
           
-          # Localiza o caminho exato do pacote do Node.js
+          if [ ! -s Packages ]; then
+            curl -sL -A "Mozilla/5.0" "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages" -o Packages || true
+          fi
+
           PKG_PATH=$(grep -A 15 "^Package: nodejs$" Packages | grep "^Filename:" | head -n 1 | awk '{print $2}')
           if [ -z "$PKG_PATH" ]; then
             PKG_PATH=$(grep -A 15 "^Package: nodejs-lts$" Packages | grep "^Filename:" | head -n 1 | awk '{print $2}')
           fi
-          
-          echo "Baixando pacote: $PKG_PATH"
-          curl -L -o node.deb "https://packages-cf.termux.dev/apt/termux-main/${PKG_PATH}"
-          
-          # Extrai o binario e renomeia para libnode.so
+
+          echo "Caminho do pacote: $PKG_PATH"
+
+          if [ -n "$PKG_PATH" ]; then
+            curl -sL -A "Mozilla/5.0" -o node.deb "https://packages-cf.termux.dev/apt/termux-main/${PKG_PATH}"
+          else
+            curl -sL -A "Mozilla/5.0" -o node.deb "https://packages-cf.termux.dev/apt/termux-main/pool/main/n/node/nodejs_20.18.0_aarch64.deb"
+          fi
+
+          # Extrai o arquivo .deb (com suporte a zstd e xz)
           ar x node.deb
-          tar -xf data.tar.xz || tar -xf data.tar.gz
-          cp usr/bin/node android/app/src/main/jniLibs/arm64-v8a/libnode.so
+          tar --zstd -xf data.tar.zst 2>/dev/null || tar -xf data.tar.xz 2>/dev/null || tar -xf data.tar.gz 2>/dev/null || true
+
+          if [ -f usr/bin/node ]; then
+            cp usr/bin/node android/app/src/main/jniLibs/arm64-v8a/libnode.so
+            echo "-> libnode.so extraido com sucesso!"
+          else
+            echo "-> Erro ao localizar o executavel do Node.js extraido!"
+            exit 1
+          fi
 
       - name: Preparar Projeto e Copiar Assets
         run: |
