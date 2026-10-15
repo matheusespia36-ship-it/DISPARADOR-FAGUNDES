@@ -3,8 +3,7 @@
   "appName": "Disparador WhatsApp",
   "webDir": "www",
   "server": {
-    "androidScheme": "http",
-    "cleartext": true,
+    "androidScheme": "https",
     "allowNavigation": [
       "*"
     ]
@@ -12,9 +11,6 @@
   "plugins": {
     "CapacitorHttp": {
       "enabled": true
-    },
-    "CapacitorNodeJS": {
-      "nodeDir": "nodejs"
     }
   }
 }

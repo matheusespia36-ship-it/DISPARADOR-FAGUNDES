@@ -1,4 +1,4 @@
-name: Compilar APK Android Autônomo
+name: Compilar APK Android (Nuvem)
 
 on:
   push:
@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
       - name: Baixar Código
         uses: actions/checkout@v4
@@ -18,31 +17,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Instalar Dependências e Módulos
+      - name: Instalar Dependências e Capacitor
         run: |
-          npm install --legacy-peer-deps --no-audit --no-fund
-          npm install capacitor-nodejs @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps --no-audit --no-fund
-          
-          if [ -d "public/nodejs" ]; then
-            cd public/nodejs
-            npm install --production --legacy-peer-deps --no-audit --no-fund
-            cd ../..
-          fi
-
+          npm install
           mkdir -p www
           cp public/index.html www/index.html
-          if [ -d "public/nodejs" ]; then
-            cp -r public/nodejs www/nodejs
-          fi
-          
           npx @capacitor/cli add android || true
           npx @capacitor/cli sync android
-          
-          # Injeta permissões de Foreground Service, WakeLock e Bateria no AndroidManifest.xml
-          MANIF="android/app/src/main/AndroidManifest.xml"
-          if [ -f "$MANIF" ]; then
-            sed -i 's/<application/<uses-permission android:name="android.permission.FOREGROUND_SERVICE" \/>\n    <uses-permission android:name="android.permission.WAKE_LOCK" \/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>\n    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" \/>\n    <application android:usesCleartextTraffic="true"/g' "$MANIF"
-          fi
 
       - name: Corrigir conflito de duplicidade Kotlin
         run: |
@@ -72,5 +53,5 @@ jobs:
       - name: Disponibilizar APK para Download
         uses: actions/upload-artifact@v4
         with:
-          name: Disparador-WhatsApp-Autonomo
+          name: Disparador-WhatsApp
           path: android/app/build/outputs/apk/debug/app-debug.apk
