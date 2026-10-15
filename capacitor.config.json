@@ -1,0 +1,9 @@
+{
+  "appId": "com.automan.disparador",
+  "appName": "Disparador WhatsApp",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}

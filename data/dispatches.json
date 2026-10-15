@@ -1,0 +1,15 @@
+[
+  {
+    "slug": "Teste",
+    "name": "RELATÓRIO FIM DE TURNO",
+    "groupJid": "120363413477898100@g.us",
+    "groupName": "TESTE DO PRO MEU TRABALHO",
+    "caption": "Relatório de Produção · {data} {hora}",
+    "schedType": "interval",
+    "schedValue": "120",
+    "active": true,
+    "lastMessage": null,
+    "lastRunTs": 0,
+    "lastRunHM": ""
+  }
+]
