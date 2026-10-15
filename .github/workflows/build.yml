@@ -35,8 +35,8 @@ jobs:
           
           NODE_BIN=$(find . -type f -name "node" | head -n 1)
           if [ -n "$NODE_BIN" ]; then
-            mkdir -p bin_temp
-            cp "$NODE_BIN" bin_temp/node
+            mkdir -p lib_node_temp
+            cp "$NODE_BIN" lib_node_temp/libnode.so
           else
             exit 1
           fi
@@ -59,10 +59,12 @@ jobs:
           npx @capacitor/cli add android
           npx @capacitor/cli sync android
 
-          # Em vez de jniLibs (que bloqueia execução), colocamos nos assets
+          # Coloca o binario na pasta de bibliotecas nativas autorizadas
+          mkdir -p android/app/src/main/jniLibs/arm64-v8a
+          cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
+
           mkdir -p android/app/src/main/assets
           cp backend.zip android/app/src/main/assets/
-          cp bin_temp/node android/app/src/main/assets/
 
           PACKAGE_PATH="android/app/src/main/java/com/disparador/app"
           mkdir -p "$PACKAGE_PATH"
@@ -84,6 +86,17 @@ jobs:
                   iniciarNodeJSInternal();
               }
 
+              private void showError(String title, String msg) {
+                  runOnUiThread(() -> {
+                      new AlertDialog.Builder(MainActivity.this)
+                          .setTitle(title)
+                          .setMessage(msg)
+                          .setPositiveButton("OK", null)
+                          .setCancelable(false)
+                          .show();
+                  });
+              }
+
               private void iniciarNodeJSInternal() {
                   new Thread(() -> {
                       try {
@@ -96,71 +109,45 @@ jobs:
                               unzipAsset(context, "backend.zip", nodeDir);
                           }
 
-                          // Extrai o binario Node puro e força permissão de execução
-                          File nodeBin = new File(filesDir, "node");
-                          if (!nodeBin.exists() || !nodeBin.canExecute()) {
-                              copyAsset(context, "node", nodeBin);
-                              nodeBin.setExecutable(true, false); // ESSENCIAL PARA O ANDROID
+                          // Caminho autorizado pelo Android para execucao
+                          String nativeDir = context.getApplicationInfo().nativeLibraryDir;
+                          File nodeBin = new File(nativeDir, "libnode.so");
+
+                          if (!nodeBin.exists()) {
+                              showError("Erro Critico", "Binario Node nao encontrado em:\n" + nativeDir);
+                              return;
                           }
 
-                          if (nodeBin.exists() && serverFile.exists()) {
-                              ProcessBuilder pb = new ProcessBuilder(nodeBin.getAbsolutePath(), serverFile.getAbsolutePath());
-                              pb.directory(nodeDir);
-                              
-                              // Injeta a variavel para o chdir() do Node.js
-                              pb.environment().put("ANDROID_DATA_DIR", filesDir.getAbsolutePath());
-                              pb.environment().put("PORT", "3000");
-                              
-                              File logFile = new File(context.getExternalFilesDir(null), "node.log");
-                              pb.redirectErrorStream(true);
-                              pb.redirectOutput(logFile);
-                              
-                              Process p = pb.start();
-                              int exitCode = p.waitFor();
-                              
-                              if (exitCode != 0) {
-                                  lerLogEMostrarNaTela(logFile);
+                          ProcessBuilder pb = new ProcessBuilder(nodeBin.getAbsolutePath(), serverFile.getAbsolutePath());
+                          pb.directory(nodeDir);
+                          
+                          pb.environment().put("ANDROID_DATA_DIR", filesDir.getAbsolutePath());
+                          pb.environment().put("PORT", "3000");
+                          
+                          File logFile = new File(context.getExternalFilesDir(null), "node.log");
+                          pb.redirectErrorStream(true);
+                          pb.redirectOutput(logFile);
+                          
+                          Process p = pb.start();
+                          int exitCode = p.waitFor();
+                          
+                          if (exitCode != 0) {
+                              StringBuilder sb = new StringBuilder();
+                              try (BufferedReader br = new BufferedReader(new FileReader(logFile))) {
+                                  String line;
+                                  while ((line = br.readLine()) != null) sb.append(line).append("\n");
                               }
+                              String fullLog = sb.toString();
+                              String errorMsg = fullLog.length() > 1000 ? fullLog.substring(fullLog.length() - 1000) : fullLog;
+                              showError("Node.js Falhou (Cod " + exitCode + ")", errorMsg);
                           }
                       } catch (Exception e) {
-                          e.printStackTrace();
+                          // AGORA O ERRO DO JAVA VAI APARECER NA TELA
+                          StringWriter sw = new StringWriter();
+                          e.printStackTrace(new PrintWriter(sw));
+                          showError("Erro Java Interno", sw.toString());
                       }
                   }).start();
-              }
-              
-              private void lerLogEMostrarNaTela(File logFile) {
-                  try {
-                      BufferedReader br = new BufferedReader(new FileReader(logFile));
-                      StringBuilder sb = new StringBuilder();
-                      String line;
-                      while ((line = br.readLine()) != null) {
-                          sb.append(line).append("\n");
-                      }
-                      br.close();
-                      String fullLog = sb.toString();
-                      final String errorMsg = fullLog.length() > 1000 ? fullLog.substring(fullLog.length() - 1000) : fullLog;
-                      
-                      runOnUiThread(() -> {
-                          new AlertDialog.Builder(MainActivity.this)
-                              .setTitle("Erro Fatal no Servidor")
-                              .setMessage("Motivo da falha:\n\n" + errorMsg)
-                              .setPositiveButton("OK", null)
-                              .setCancelable(false)
-                              .show();
-                      });
-                  } catch (Exception e) {}
-              }
-
-              private void copyAsset(Context context, String assetName, File destFile) throws IOException {
-                  InputStream is = context.getAssets().open(assetName);
-                  FileOutputStream fos = new FileOutputStream(destFile);
-                  byte[] buffer = new byte[8192];
-                  int read;
-                  while ((read = is.read(buffer)) != -1) {
-                      fos.write(buffer, 0, read);
-                  }
-                  fos.close();
-                  is.close();
               }
 
               private void unzipAsset(Context context, String assetName, File destDir) throws IOException {
@@ -178,9 +165,7 @@ jobs:
                           file.getParentFile().mkdirs();
                           FileOutputStream fos = new FileOutputStream(file);
                           int count;
-                          while ((count = zis.read(buffer)) != -1) {
-                              fos.write(buffer, 0, count);
-                          }
+                          while ((count = zis.read(buffer)) != -1) fos.write(buffer, 0, count);
                           fos.close();
                       }
                       zis.closeEntry();
@@ -190,7 +175,11 @@ jobs:
           }
           JAVA
 
+          # 1. Libera tráfego interno (HTTP local)
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+          
+          # 2. OBRIGA O ANDROID A EXTRAIR O BINÁRIO COM PERMISSÃO DE EXECUÇÃO
+          sed -i 's/<application/<application android:extractNativeLibs="true" /' android/app/src/main/AndroidManifest.xml
 
       - name: Compilar APK Debug
         run: |
