@@ -203,12 +203,10 @@ input[type=file]{font-size:13px;max-width:100%}
     waStatus: 'verificando',
     qrImage: null,
     groups: [],
-    dispatches: [
-      { id: 1, name: 'Relatório de Fim de Turno', group: 'Produção Lavra Norte', mode: 'times', times: ['06:40', '18:40'], interval: 120, source: 'excel', caption: 'Relatório · {data} {hora}', active: true, last: '' }
-    ],
+    dispatches: [],
     history: [],
     logs: [],
-    draft: null, editingId: null, errors: {}, confirmDel: false, q: '', tokenShown: false, qr: false, nextId: 2
+    draft: null, editingId: null, errors: {}, confirmDel: false, q: '', tokenShown: false, qr: false, nextId: 1
   };
 
   var I = {
@@ -241,23 +239,54 @@ input[type=file]{font-size:13px;max-width:100%}
     if (state.screen === 'conn') renderConn();
   }
 
-  // Polling real do Backend Node.js
-  async function pollBackendStatus() {
+  // Função central autenticada para requisições ao backend
+  async function api(path, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    options.headers['x-token'] = TOKEN;
+    options.headers['Content-Type'] = 'application/json';
     try {
-      var res = await fetch(BACKEND_URL + '/status');
-      var data = await res.json();
+      var res = await fetch(BACKEND_URL + path, options);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } catch (e) {
+      addLog('Erro API (' + path + '): ' + e.message, 'err');
+      throw e;
+    }
+  }
+
+  // Sincronização real com o Backend Node.js
+  async function pollBackendData() {
+    try {
+      var data = await api('/status');
       state.waStatus = data.whatsapp || 'conectado';
       state.qrImage = data.qr || null;
       if (data.groups) state.groups = data.groups;
-      addLog('GET /status 200 OK - WA: ' + state.waStatus, 'ok');
+      if (data.dispatches) {
+        state.dispatches = data.dispatches.map(function(d) {
+          return {
+            id: d.id || slug(d.name),
+            name: d.name,
+            group: d.groupName || d.group,
+            mode: d.schedType === 'interval' ? 'interval' : 'times',
+            times: d.schedType === 'times' ? (Array.isArray(d.schedValue) ? d.schedValue : [d.schedValue]) : [],
+            interval: d.schedType === 'interval' ? Number(d.schedValue) || 120 : 120,
+            source: 'excel',
+            caption: d.caption || '',
+            active: d.active !== false,
+            last: d.lastRun || ''
+          };
+        });
+      }
+      addLog('GET /status 200 OK - Sincronizado', 'ok');
     } catch (e) {
       state.waStatus = 'offline';
-      addLog('GET /status falhou: Servidor local inacessível', 'err');
+      addLog('Falha ao comunicar com o backend local', 'err');
     }
-    if (state.screen === 'conn' || state.screen === 'home') renderNav();
+    if (['conn', 'home'].indexOf(state.screen) !== -1) RENDER[state.screen]();
   }
-  setInterval(pollBackendStatus, 4000);
-  pollBackendStatus();
+  setInterval(pollBackendData, 4000);
+  pollBackendData();
 
   var INTERVALS = [[15, '15 minutos'], [30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [240, '4 horas'], [360, '6 horas']];
   var intervalText = function (m) { var f = INTERVALS.filter(function (x) { return x[0] === m; })[0]; return f ? f[1] : m + ' minutos'; };
@@ -266,7 +295,6 @@ input[type=file]{font-size:13px;max-width:100%}
     if (d.mode === 'interval') return 'A cada ' + intervalText(d.interval);
     return d.times.length ? 'Todo dia às ' + joinList(d.times) : 'Sem horários';
   };
-  var nowLabel = function () { var d = new Date(); return 'Hoje, ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
 
   function toast(msg) {
     var t = $('#toast');
@@ -293,7 +321,7 @@ input[type=file]{font-size:13px;max-width:100%}
       '<div class="card-top"><button class="card-title" data-act="edit" data-id="' + d.id + '">' + esc(d.name) + '</button>' +
       '<button class="sw" data-act="toggle" data-id="' + d.id + '" aria-pressed="' + d.active + '"><span class="track"><span class="knob"></span></span></button></div>' +
       '<div class="meta">' + ic('users', 16) + esc(d.group) + '</div>' +
-      '<div class="meta">' + ic('clock', 16) + esc(schedText(d)) + ' · ' + (d.source === 'excel' ? 'Excel' : 'Manual') + '</div>' +
+      '<div class="meta">' + ic('clock', 16) + esc(schedText(d)) + ' · Excel</div>' +
       '<div class="meta' + (d.active && d.last ? ' okt' : '') + '">' + last + '</div></article>';
   }
 
@@ -305,7 +333,7 @@ input[type=file]{font-size:13px;max-width:100%}
       '<header class="top"><h1>Disparos</h1><span class="pill"><i class="dot"></i>' + waText + '</span></header>' +
       '<p class="proto">Backend Node.js nativo ativo na porta 3000.</p>' +
       '<div class="sect"><h2>Meus disparos</h2><span class="muted sm">' + act + ' ativos de ' + state.dispatches.length + '</span></div>' +
-      '<div class="cards">' + (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo ainda.</div>') + '</div>' +
+      '<div class="cards">' + (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo configurado no servidor.</div>') + '</div>' +
       '</div>' +
       '<div class="foot"><button class="btn primary" data-act="new">' + ic('plus', 20, 2.5) + 'Novo disparo</button></div>';
   }
@@ -404,26 +432,54 @@ input[type=file]{font-size:13px;max-width:100%}
       if (v && state.draft.times.indexOf(v) === -1) { state.draft.times.push(v); state.draft.times.sort(); state.draft.newTime = ''; renderNovo(); }
     },
     delTime: function (t) { state.draft.times = state.draft.times.filter(function (x) { return x !== t.dataset.t; }); renderNovo(); },
-    save: function () {
-      state.dispatches.push(Object.assign({ id: state.nextId++ }, state.draft));
-      addLog('Disparo criado: ' + state.draft.name, 'ok');
-      show('home');
-      toast('Salvo com sucesso');
+    save: async function () {
+      var d = state.draft;
+      var payload = {
+        name: d.name,
+        groupName: d.group,
+        schedType: d.mode === 'interval' ? 'interval' : 'times',
+        schedValue: d.mode === 'interval' ? d.interval : d.times,
+        caption: d.caption,
+        active: d.active
+      };
+      try {
+        await api('/dispatches/' + (slug(d.name) || 'novo'), { method: 'PUT', body: JSON.stringify(payload) });
+        addLog('Disparo salvo no backend: ' + d.name, 'ok');
+        toast('Salvo com sucesso no servidor');
+        pollBackendData();
+        show('home');
+      } catch (e) {
+        toast('Erro ao salvar no servidor');
+      }
+    },
+    toggle: async function (t) {
+      var id = t.dataset.id;
+      var d = state.dispatches.filter(function (x) { return x.id == id; })[0];
+      if (!d) return;
+      d.active = !d.active;
+      var payload = {
+        name: d.name,
+        groupName: d.group,
+        schedType: d.mode,
+        schedValue: d.mode === 'interval' ? d.interval : d.times,
+        active: d.active
+      };
+      try {
+        await api('/dispatches/' + slug(d.name), { method: 'PUT', body: JSON.stringify(payload) });
+        addLog('Status alterado para: ' + (d.active ? 'Ativo' : 'Pausado'), 'ok');
+        renderHome();
+      } catch (e) {
+        toast('Erro ao atualizar status');
+      }
     },
     test: async function () {
       try {
         addLog('POST /test - Enviando teste manual...', 'normal');
-        var res = await fetch(BACKEND_URL + '/test', { method: 'POST' });
-        if (res.ok) {
-          toast('Teste enviado com sucesso!');
-          addLog('POST /test 200 OK', 'ok');
-        } else {
-          toast('Erro ao testar envio.');
-          addLog('POST /test falhou', 'err');
-        }
+        var res = await api('/test', { method: 'POST' });
+        toast('Teste acionado com sucesso!');
+        addLog('POST /test 200 OK', 'ok');
       } catch (e) {
-        toast('Servidor offline.');
-        addLog('POST /test erro de conexão', 'err');
+        toast('Falha na rota de teste.');
       }
     },
     copy: function (t) { copyText(t.dataset.text); },
