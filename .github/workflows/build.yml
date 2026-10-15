@@ -25,7 +25,7 @@ jobs:
 
       - name: Baixar Binario Node.js ARM64 Nativo
         run: |
-          sudo apt-get update && sudo apt-get install -y zstd binutils python3
+          sudo apt-get update && sudo apt-get install -y zstd binutils python3 zip
           python3 scripts/download_node.py
           
           ar x node.deb
@@ -37,33 +37,38 @@ jobs:
           if [ -n "$NODE_BIN" ]; then
             mkdir -p lib_node_temp
             cp "$NODE_BIN" lib_node_temp/libnode.so
-            echo "-> Node.js extraido com sucesso!"
+            echo "-> Executavel Node.js extraido!"
           else
             echo "-> Erro ao localizar o executavel do Node.js!"
             exit 1
           fi
 
-      - name: Preparar Projeto Android
+      - name: Preparar Projeto e Compactar Backend
         run: |
           npm install --no-audit --no-fund
           mkdir -p www
           cp public/index.html www/index.html
 
+          mkdir -p backend_pack
+          cp server.js package.json backend_pack/
+          cp -r node_modules backend_pack/ || true
+          mkdir -p backend_pack/public
+          cp public/index.html backend_pack/public/
+          
+          cd backend_pack
+          zip -r -q ../backend.zip .
+          cd ..
+
           rm -rf android
           npx @capacitor/cli add android
           npx @capacitor/cli sync android
 
-          # Copia a biblioteca nativa libnode.so
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
 
-          # Copia o backend para os assets do APK
-          mkdir -p android/app/src/main/assets/nodejs-project
-          cp server.js android/app/src/main/assets/nodejs-project/
-          cp package.json android/app/src/main/assets/nodejs-project/
-          cp -r node_modules android/app/src/main/assets/nodejs-project/ || true
+          mkdir -p android/app/src/main/assets
+          cp backend.zip android/app/src/main/assets/
 
-          # Configura MainActivity com extrator de assets completo
           PACKAGE_PATH="android/app/src/main/java/com/disparador/app"
           mkdir -p "$PACKAGE_PATH"
           cat << 'JAVA' > "$PACKAGE_PATH/MainActivity.java"
@@ -73,6 +78,8 @@ jobs:
           import android.content.Context;
           import com.getcapacitor.BridgeActivity;
           import java.io.*;
+          import java.util.zip.ZipEntry;
+          import java.util.zip.ZipInputStream;
 
           public class MainActivity extends BridgeActivity {
               @Override
@@ -88,17 +95,23 @@ jobs:
                           File filesDir = context.getFilesDir();
                           File nodeDir = new File(filesDir, "nodejs-project");
 
-                          // Extrai arquivos do backend para a memoria do app
-                          copiarAssetsRecursivo(context, "nodejs-project", nodeDir);
+                          File serverFile = new File(nodeDir, "server.js");
+                          if (!serverFile.exists()) {
+                              unzipAsset(context, "backend.zip", nodeDir);
+                          }
 
                           String nodeBinary = context.getApplicationInfo().nativeLibraryDir + "/libnode.so";
-                          File serverFile = new File(nodeDir, "server.js");
 
                           if (new File(nodeBinary).exists() && serverFile.exists()) {
                               ProcessBuilder pb = new ProcessBuilder(nodeBinary, serverFile.getAbsolutePath());
                               pb.directory(nodeDir);
                               pb.environment().put("PORT", "3000");
                               pb.environment().put("HOME", filesDir.getAbsolutePath());
+                              
+                              File logFile = new File(filesDir, "node.log");
+                              pb.redirectErrorStream(true);
+                              pb.redirectOutput(logFile);
+                              
                               pb.start();
                           }
                       } catch (Exception e) {
@@ -107,33 +120,33 @@ jobs:
                   }).start();
               }
 
-              private void copiarAssetsRecursivo(Context context, String path, File targetDir) {
-                  try {
-                      String[] files = context.getAssets().list(path);
-                      if (files != null && files.length > 0) {
-                          targetDir.mkdirs();
-                          for (String file : files) {
-                              String subPath = path.isEmpty() ? file : path + "/" + file;
-                              copiarAssetsRecursivo(context, subPath, new File(targetDir, file));
-                          }
+              private void unzipAsset(Context context, String assetName, File destDir) throws IOException {
+                  destDir.mkdirs();
+                  InputStream is = context.getAssets().open(assetName);
+                  ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+                  ZipEntry ze;
+                  byte[] buffer = new byte[8192];
+                  
+                  while ((ze = zis.getNextEntry()) != null) {
+                      File file = new File(destDir, ze.getName());
+                      if (ze.isDirectory()) {
+                          file.mkdirs();
                       } else {
-                          InputStream in = context.getAssets().open(path);
-                          OutputStream out = new FileOutputStream(targetDir);
-                          byte[] buffer = new byte[4096];
-                          int read;
-                          while ((read = in.read(buffer)) != -1) {
-                              out.write(buffer, 0, read);
+                          file.getParentFile().mkdirs();
+                          FileOutputStream fos = new FileOutputStream(file);
+                          int count;
+                          while ((count = zis.read(buffer)) != -1) {
+                              fos.write(buffer, 0, count);
                           }
-                          in.close();
-                          out.flush();
-                          out.close();
+                          fos.close();
                       }
-                  } catch (Exception ignored) {}
+                      zis.closeEntry();
+                  }
+                  zis.close();
               }
           }
           JAVA
 
-          # Permite trafego HTTP local
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
 
       - name: Compilar APK Debug

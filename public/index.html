@@ -3,104 +3,167 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Disparador WhatsApp</title>
+  <title>Disparador WhatsApp Autônomo</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 16px; }
-    .card { background: #1e293b; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155; }
-    .status-ok { color: #4ade80; font-weight: bold; }
-    .status-err { color: #f87171; font-weight: bold; }
-    #debug-log { background: #000; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 220px; overflow-y: auto; color: #38bdf8; }
-    button { background: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 8px; }
+    :root {
+      --bg-primary: #0b141a;
+      --bg-secondary: #111b21;
+      --bg-card: #202c33;
+      --accent-green: #00a884;
+      --accent-green-hover: #008f70;
+      --text-primary: #e9edef;
+      --text-secondary: #8696a0;
+      --border-color: #222d34;
+      --danger: #ea4335;
+      --warning: #fbbc05;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg-primary); color: var(--text-primary); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    header { background-color: var(--bg-secondary); padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+    .logo { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.1rem; }
+    .logo-icon { width: 10px; height: 10px; border-radius: 50%; background-color: var(--danger); display: inline-block; }
+    .logo-icon.online { background-color: var(--accent-green); }
+    nav { display: flex; background-color: var(--bg-secondary); border-bottom: 1px solid var(--border-color); }
+    .tab-btn { flex: 1; padding: 14px; background: none; border: none; color: var(--text-secondary); font-weight: 500; font-size: 0.95rem; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s ease; }
+    .tab-btn.active { color: var(--accent-green); border-bottom-color: var(--accent-green); background-color: rgba(0, 168, 132, 0.05); }
+    main { flex: 1; padding: 16px; overflow-y: auto; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .card { background-color: var(--bg-card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border-color); }
+    .card-title { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px; }
+    textarea, input { width: 100%; background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; color: var(--text-primary); font-size: 0.95rem; outline: none; }
+    textarea:focus, input:focus { border-color: var(--accent-green); }
+    button.btn-primary { width: 100%; padding: 14px; background-color: var(--accent-green); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; }
+    .status-box { display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: var(--bg-primary); border-radius: 8px; margin-bottom: 10px; }
+    .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+    .badge-success { background: rgba(0, 168, 132, 0.2); color: var(--accent-green); }
+    .badge-warning { background: rgba(251, 188, 5, 0.2); color: var(--warning); }
+    .badge-danger { background: rgba(234, 67, 53, 0.2); color: var(--danger); }
+    .qr-container { display: flex; justify-content: center; padding: 16px; background-color: #fff; border-radius: 8px; margin-top: 10px; }
+    .qr-container img { max-width: 220px; width: 100%; }
+    .log-box { background-color: #000; color: #00ff66; font-family: monospace; font-size: 0.78rem; padding: 12px; border-radius: 8px; height: 140px; overflow-y: auto; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-
-  <h2>Disparador WhatsApp (Autônomo)</h2>
-
-  <div class="card">
-    <div>Servidor Embutido: <span id="server-status">Iniciando...</span></div>
-    <div>WhatsApp: <span id="wa-status">Aguardando...</span></div>
-  </div>
-
-  <div class="card">
-    <strong>Console de Inicialização</strong>
-    <pre id="debug-log">Inicializando app autônomo...</pre>
-    <button onclick="executarTestes()">Testar Conexão Novamente</button>
-  </div>
-
-  <script src="capacitor.js"></script>
+  <header>
+    <div class="logo">
+      <span id="status-dot" class="logo-icon"></span>
+      Disparador Local
+    </div>
+    <span id="server-status-tag" class="badge badge-warning">Inicializando</span>
+  </header>
+  <nav>
+    <button class="tab-btn active" onclick="switchTab(event, 'disparo')">Disparo</button>
+    <button class="tab-btn" onclick="switchTab(event, 'conexao')">Conexão</button>
+    <button class="tab-btn" onclick="switchTab(event, 'config')">Ajustes</button>
+  </nav>
+  <main>
+    <section id="tab-disparo" class="tab-content active">
+      <div class="card">
+        <div class="card-title">Nova Campanha de Envio</div>
+        <div class="form-group">
+          <label>Lista de Contatos (um por linha com DDD)</label>
+          <textarea id="numbers" rows="5" placeholder="5511999998888&#10;5521988887777"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Mensagem</label>
+          <textarea id="message" rows="4" placeholder="Digite a mensagem para envio..."></textarea>
+        </div>
+        <button class="btn-primary" onclick="iniciarDisparo()">Iniciar Envio em Massa</button>
+      </div>
+    </section>
+    <section id="tab-conexao" class="tab-content">
+      <div class="card">
+        <div class="card-title">Servidor Nativo Interno</div>
+        <div class="status-box">
+          <span>Node.js Local (127.0.0.1:3000)</span>
+          <span id="node-badge" class="badge badge-warning">Aguardando...</span>
+        </div>
+        <div class="status-box">
+          <span>Status do WhatsApp</span>
+          <span id="wa-badge" class="badge badge-warning">Verificando...</span>
+        </div>
+      </div>
+      <div id="qr-section" class="card" style="display: none;">
+        <div class="card-title">Escanear QR Code</div>
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px;">Abra o WhatsApp no seu celular > Aparelhos Conectados > Conectar um Aparelho.</p>
+        <div class="qr-container">
+          <img id="qr-code-img" src="" alt="QR Code do WhatsApp" />
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Logs de Execução</div>
+        <div id="log-box" class="log-box">Servidor local sendo inicializado em segundo plano...\n</div>
+      </div>
+    </section>
+    <section id="tab-config" class="tab-content">
+      <div class="card">
+        <div class="card-title">Configurações Anti-Bloqueio</div>
+        <div class="form-group">
+          <label>Intervalo entre envios (segundos)</label>
+          <input type="number" id="delay" value="10" min="5">
+        </div>
+      </div>
+    </section>
+  </main>
   <script>
-    const LOG = document.getElementById('debug-log');
+    function switchTab(e, tabName) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+      e.target.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+    }
     function log(msg) {
-      LOG.textContent += '\n' + new Date().toLocaleTimeString() + ' - ' + msg;
-      LOG.scrollTop = LOG.scrollHeight;
+      const box = document.getElementById('log-box');
+      const time = new Date().toLocaleTimeString();
+      box.innerHTML += `[${time}] ${msg}\n`;
+      box.scrollTop = box.scrollHeight;
     }
-
-    async function iniciarNodeJS() {
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorNodeJS) {
-        log('Iniciando motor Node.js interno no APK...');
-        try {
-          await window.Capacitor.Plugins.CapacitorNodeJS.start();
-          log('-> Motor Node.js iniciado com sucesso!');
-        } catch (e) {
-          log('-> Aviso ao iniciar Node.js: ' + e.message);
-        }
-      } else {
-        log('Modo WebView / Termux detectado (CapacitorNodeJS ausente)');
-      }
-    }
-
-    async function testarEndpoint(url) {
-      log('Conectando em: ' + url);
+    async function checarServidor() {
       try {
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: { 'x-token': 'minhasenha' }
-        });
-        log('-> Status HTTP: ' + res.status);
-        if (res.ok) {
-          const data = await res.json();
-          log('-> Resposta: ' + JSON.stringify(data));
-          return data;
+        const res = await fetch('http://127.0.0.1:3000/status');
+        const data = await res.json();
+        document.getElementById('status-dot').className = 'logo-icon online';
+        document.getElementById('server-status-tag').innerText = 'Online';
+        document.getElementById('server-status-tag').className = 'badge badge-success';
+        document.getElementById('node-badge').innerText = 'Ativo (127.0.0.1)';
+        document.getElementById('node-badge').className = 'badge badge-success';
+        if (data.whatsapp === 'open') {
+          document.getElementById('wa-badge').innerText = 'Conectado';
+          document.getElementById('wa-badge').className = 'badge badge-success';
+          document.getElementById('qr-section').style.display = 'none';
+        } else if (data.qr) {
+          document.getElementById('wa-badge').innerText = 'Aguardando QR Code';
+          document.getElementById('wa-badge').className = 'badge badge-warning';
+          document.getElementById('qr-section').style.display = 'block';
+          document.getElementById('qr-code-img').src = data.qr;
+        } else {
+          document.getElementById('wa-badge').innerText = 'Iniciando WhatsApp...';
+          document.getElementById('wa-badge').className = 'badge badge-warning';
         }
       } catch (err) {
-        log('-> Falha: ' + err.message);
+        document.getElementById('status-dot').className = 'logo-icon';
+        document.getElementById('server-status-tag').innerText = 'Iniciando';
+        document.getElementById('server-status-tag').className = 'badge badge-warning';
+        document.getElementById('node-badge').innerText = 'Ligando Engine...';
+        document.getElementById('node-badge').className = 'badge badge-warning';
+        log('Aguardando inicialização do processo Node.js nativo...');
       }
-      return null;
     }
-
-    async function executarTestes() {
-      const elServer = document.getElementById('server-status');
-      const elWa = document.getElementById('wa-status');
-
-      // Tenta até 5 vezes aguardando o Node.js interno subir a porta 3000
-      for (let i = 1; i <= 5; i++) {
-        log(`Tentativa ${i}/5 de conexão com o servidor interno...`);
-        let res = await testarEndpoint('http://127.0.0.1:3000/status');
-        
-        if (res && res.ok) {
-          elServer.className = 'status-ok';
-          elServer.textContent = 'ONLINE (Embutido)';
-          elWa.className = 'status-ok';
-          elWa.textContent = res.whatsapp || 'Conectado';
-          return;
-        }
-        await new Promise(r => setTimeout(r, 2000));
+    setInterval(checarServidor, 3000);
+    checarServidor();
+    function iniciarDisparo() {
+      const numbers = document.getElementById('numbers').value.trim();
+      const message = document.getElementById('message').value.trim();
+      if(!numbers || !message) {
+        alert('Por favor, preencha os números e a mensagem.');
+        return;
       }
-
-      elServer.className = 'status-err';
-      elServer.textContent = 'ERRO AO INICIAR';
-      elWa.className = 'status-err';
-      elWa.textContent = 'INDISPONÍVEL';
+      log('Iniciando sequência de disparos...');
+      alert('Envio iniciado! Acompanhe o progresso na aba Conexão.');
     }
-
-    window.onload = async () => {
-      await iniciarNodeJS();
-      setTimeout(executarTestes, 1500);
-    };
   </script>
 </body>
 </html>
-
-<!-- Trigger Build 18: 1792086358962 -->
-<!-- Release App UI: 1792086752196 -->
