@@ -39,9 +39,12 @@ jobs:
             tar -xf data.tar.gz
           fi
 
-          if [ -f usr/bin/node ]; then
-            cp usr/bin/node android/app/src/main/jniLibs/arm64-v8a/libnode.so
-            echo "-> libnode.so extraido com sucesso!"
+          # Localiza o executavel node independentemente do caminho do diretorio do Termux
+          NODE_BIN=$(find . -type f -name "node" | head -n 1)
+
+          if [ -n "$NODE_BIN" ]; then
+            cp "$NODE_BIN" android/app/src/main/jniLibs/arm64-v8a/libnode.so
+            echo "-> libnode.so extraido com sucesso de $NODE_BIN!"
           else
             echo "-> Erro ao localizar o executavel do Node.js extraido!"
             exit 1
