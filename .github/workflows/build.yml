@@ -39,7 +39,6 @@ jobs:
             tar -xf data.tar.gz
           fi
 
-          # Localiza o executavel node extraido do pacote Termux
           NODE_BIN=$(find . -type f -name "node" | head -n 1)
 
           if [ -n "$NODE_BIN" ]; then
@@ -69,6 +68,11 @@ jobs:
       - name: Compilar APK Debug
         run: |
           cd android
+          if [ ! -f gradlew ]; then
+            echo "-> gradlew nao encontrado. Gerando Gradle Wrapper..."
+            sudo apt-get update && sudo apt-get install -y gradle
+            gradle wrapper
+          fi
           chmod +x gradlew
           ./gradlew assembleDebug
 
