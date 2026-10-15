@@ -367,7 +367,7 @@ input[type=file]{font-size:13px;max-width:100%}
       }).join('') : '<div class="log-entry"><span class="log-msg">Aguardando requisições...</span></div>') +
       '</div></div>' +
       '<div class="box"><div class="lbl2">Pareamento WhatsApp</div>' +
-      '<button class="btn ghost block" data-act="qr">' + ic('qr', 20) + (state.qr ? 'Ocultar QR code' : 'Mostrar QR Code do Servidor') + '</button>' +
+      '<button class="btn ghost block" data-act="logout"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Desconectar e Ler Novo QR Code</button>' +
       (state.qr ? '<div class="qr">' + (state.qrImage ? '<img src="' + state.qrImage + '" alt="QR Code"/>' : '<p class="help">A carregar QR Code do servidor...</p>') + '</div>' : '') +
       '</div></div>';
   }
@@ -484,6 +484,18 @@ input[type=file]{font-size:13px;max-width:100%}
     },
     copy: function (t) { copyText(t.dataset.text); },
     tok: function () { state.tokenShown = !state.tokenShown; renderConn(); },
+    logout: async function () {
+      if (!confirm('Tem certeza que deseja desconectar o WhatsApp atual?')) return;
+      try {
+        await api('/reset-session', { method: 'POST' });
+        toast('Desconectado! Aguarde a geração do novo QR Code...');
+        state.qr = true;
+        state.waStatus = 'aguardando';
+        renderConn();
+      } catch (e) {
+        toast('Erro ao tentar desconectar.');
+      }
+    },
     qr: function () { state.qr = !state.qr; renderConn(); }
   };
 
