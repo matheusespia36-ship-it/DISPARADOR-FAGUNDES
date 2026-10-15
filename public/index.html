@@ -76,7 +76,7 @@
       // Tenta até 5 vezes aguardando o Node.js interno subir a porta 3000
       for (let i = 1; i <= 5; i++) {
         log(`Tentativa ${i}/5 de conexão com o servidor interno...`);
-        let res = await testarEndpoint('https://disparador-fagundes.onrender.com/status');
+        let res = await testarEndpoint('http://127.0.0.1:3000/status');
         
         if (res && res.ok) {
           elServer.className = 'status-ok';
