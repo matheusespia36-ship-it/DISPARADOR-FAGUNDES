@@ -27,13 +27,22 @@ jobs:
         run: |
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           
-          # Baixar e extrair binario nativo Node.js compilado para Android ARM64
-          curl -L -o node.deb https://packages.termux.dev/apt/termux-main/pool/main/n/node/node_20.18.0_aarch64.deb || true
-          if [ -f node.deb ]; then
-            ar x node.deb
-            tar -xf data.tar.xz || tar -xf data.tar.gz
-            cp usr/bin/node android/app/src/main/jniLibs/arm64-v8a/libnode.so
+          # Obtem o indice de pacotes do Termux
+          curl -sL "https://packages-cf.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages.xz" | xz -d > Packages
+          
+          # Localiza o caminho exato do pacote do Node.js
+          PKG_PATH=$(grep -A 15 "^Package: nodejs$" Packages | grep "^Filename:" | head -n 1 | awk '{print $2}')
+          if [ -z "$PKG_PATH" ]; then
+            PKG_PATH=$(grep -A 15 "^Package: nodejs-lts$" Packages | grep "^Filename:" | head -n 1 | awk '{print $2}')
           fi
+          
+          echo "Baixando pacote: $PKG_PATH"
+          curl -L -o node.deb "https://packages-cf.termux.dev/apt/termux-main/${PKG_PATH}"
+          
+          # Extrai o binario e renomeia para libnode.so
+          ar x node.deb
+          tar -xf data.tar.xz || tar -xf data.tar.gz
+          cp usr/bin/node android/app/src/main/jniLibs/arm64-v8a/libnode.so
 
       - name: Preparar Projeto e Copiar Assets
         run: |
@@ -45,7 +54,7 @@ jobs:
           npx @capacitor/cli add android || true
           npx @capacitor/cli sync android
           
-          # Copia backend para os assets do APK
+          # Copia o backend para os assets do APK
           mkdir -p android/app/src/main/assets/nodejs-project
           cp server.js android/app/src/main/assets/nodejs-project/
           cp package.json android/app/src/main/assets/nodejs-project/
