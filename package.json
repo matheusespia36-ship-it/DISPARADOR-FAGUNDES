@@ -1,18 +1,12 @@
 {
-  "name": "disparador-server",
+  "name": "disparador-backend-embedded",
   "version": "1.0.0",
-  "private": true,
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "mock": "MOCK=1 node server.js"
-  },
   "dependencies": {
-    "@capacitor/android": "^8.5.3",
-    "@capacitor/cli": "^8.5.3",
-    "@capacitor/core": "^8.5.3",
-    "@whiskeysockets/baileys": "^6.7.24",
-    "pino": "^9.0.0",
-    "qrcode": "^1.5.3"
+    "@whiskeysockets/baileys": "^6.7.13",
+    "express": "^4.21.1",
+    "cors": "^2.8.5",
+    "pino": "^9.4.0",
+    "qrcode": "^1.5.4"
   }
 }
