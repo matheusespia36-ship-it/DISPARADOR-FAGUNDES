@@ -45,16 +45,18 @@ jobs:
 
       - name: Preparar Projeto e Sincronizar Capacitor
         run: |
-          # CORREÇÃO: Força a instalação explícita dos pacotes do Capacitor essenciais antes do sync
-          npm install @capacitor/core@6.0.0 @capacitor/android@6.0.0 @capacitor/cli@6.0.0 --no-audit --no-fund
-          npm install --no-audit --no-fund
-          
+          # Cria a pasta web obrigatoriamente antes do Capacitor iniciar
           mkdir -p www
           cp public/index.html www/index.html || echo "<h1>Disparador</h1>" > www/index.html
 
+          # Instalação forçada e local das dependências nativas
+          npm install @capacitor/cli@6.0.0 @capacitor/core@6.0.0 @capacitor/android@6.0.0 --save --no-audit --no-fund
+          npm install --no-audit --no-fund
+          
+          # Executa o build utilizando o CLI instalado localmente no projeto para evitar conflito de versões globais
           rm -rf android
-          npx @capacitor/cli add android
-          npx @capacitor/cli sync android
+          npx capacitor add android
+          npx capacitor sync android
 
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
