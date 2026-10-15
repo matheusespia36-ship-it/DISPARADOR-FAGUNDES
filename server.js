@@ -1,3 +1,5 @@
+process.on("uncaughtException", err => console.error("[ERRO] Exceção capturada:", err));
+process.on("unhandledRejection", reason => console.error("[ERRO] Rejeição capturada:", reason));
 const http = require('node:http');
 const crypto = require('node:crypto');
 const fs = require('node:fs');

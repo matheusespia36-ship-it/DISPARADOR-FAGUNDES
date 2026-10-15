@@ -1,367 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Disparador WhatsApp</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
-    <style>
-        :root {
-            --bg-outer: #080D0B;
-            --bg: #0D1411;
-            --surface: #16201B;
-            --line: #26352D;
-            --fg: #EAF2EE;
-            --muted: #93A89D;
-            --accent: #2EE08A;
-            --accent-ink: #06130C;
-            --accent-text: #2EE08A;
-            --accent-soft: rgba(46,224,138,.12);
-            --danger: #FF8A8A;
-            color-scheme: dark;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
-        html, body { height: 100%; }
-        body { background: var(--bg-outer); color: var(--fg); font-size: 14px; padding: 16px; display: flex; justify-content: center; }
-        #app { width: 100%; max-width: 440px; height: 100%; display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--line); border-radius: 24px; overflow: hidden; }
-        .stage { flex: 1; position: relative; overflow-y: auto; }
-        .screen { display: flex; flex-direction: column; height: 100%; }
-        .screen[hidden] { display: none !important; }
-        .body { padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; }
-        .bar { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
-        .bar h1 { font-size: 20px; font-weight: 700; flex: 1; }
-        .card { padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
-        .btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border-radius: 14px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; }
-        .btn.primary { background: var(--accent); color: var(--accent-ink); }
-        .btn.danger { background: var(--danger); color: #000; }
-        .btn.small { min-height: 36px; padding: 0 12px; font-size: 12px; }
-        input, select, textarea { width: 100%; height: 48px; padding: 0 16px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); color: var(--fg); font-size: 14px; }
-        textarea { height: auto; padding: 12px 16px; }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        .field label { font-size: 12px; font-weight: 700; color: var(--muted); }
-        nav { display: flex; justify-content: space-around; padding: 10px; background: var(--bg); border-top: 1px solid var(--line); }
-        .tab { background: none; border: none; color: var(--muted); font-weight: 600; font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .tab[aria-current="page"] { color: var(--accent-text); }
-        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); font-weight: 700; font-size: 12px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-text); }
-        .pair-tabs { display: flex; gap: 8px; margin-top: 8px; }
-        .pair-tabs button { flex: 1; padding: 8px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font-weight: 600; cursor: pointer; }
-        .pair-tabs button.active { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
-        .code-display { font-size: 28px; font-weight: 800; letter-spacing: 4px; color: var(--accent-text); text-align: center; padding: 12px; background: var(--bg); border-radius: 12px; border: 1px dashed var(--accent); margin-top: 8px; }
-        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 10; }
-        #toast.show { opacity: 1; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Disparador WhatsApp</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 16px; }
+    .card { background: #1e293b; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155; }
+    .status-ok { color: #4ade80; font-weight: bold; }
+    .status-err { color: #f87171; font-weight: bold; }
+    #debug-log { background: #000; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 200px; overflow-y: auto; color: #38bdf8; }
+    button { background: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 8px; }
+  </style>
 </head>
 <body>
 
-<div id="app">
-  <div class="stage">
-    <!-- TELA 1: DISPAROS -->
-    <section class="screen" id="s-home">
-      <div class="bar"><h1>Disparos</h1><span class="badge" id="statusBadge"><i class="dot"></i>Verificando...</span></div>
-      <div class="body">
-        <button class="btn primary" onclick="goTo('novo')">+ Novo Disparo</button>
-        <div id="dispatchesList" style="display:flex; flex-direction:column; gap:12px; margin-top:10px;">Carregando...</div>
-      </div>
-    </section>
+  <h2>Disparador WhatsApp</h2>
 
-    <!-- TELA 2: HISTÓRICO -->
-    <section class="screen" id="s-hist" hidden>
-      <div class="bar"><h1>Histórico de Envios</h1></div>
-      <div class="body" id="historyList">Carregando...</div>
-    </section>
-
-    <!-- TELA 3: CONEXÃO DUAL -->
-    <section class="screen" id="s-conn" hidden>
-      <div class="bar"><h1>Conexão com WhatsApp</h1></div>
-      <div class="body">
-        <div class="card">
-          <b>Status da Conexão</b>
-          <p id="connStatusText" style="color: var(--muted); font-size: 13px;">A carregar...</p>
-        </div>
-
-        <div class="card" id="pairPanel" style="display:none;">
-          <b>Escolha a Forma de Conexão</b>
-          <div class="pair-tabs">
-            <button id="btnTabQr" class="active" onclick="switchPairMethod('qr')">📷 QR Code</button>
-            <button id="btnTabCode" onclick="switchPairMethod('code')">🔢 Código de 8 Dígitos</button>
-          </div>
-
-          <div id="modeQr" style="text-align:center; padding:12px 0;">
-            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Escaneie o QR Code com a câmera do WhatsApp:</p>
-            <div id="qrBox" style="min-height:180px; display:flex; align-items:center; justify-content:center;">
-              <span style="color:var(--muted); font-size:12px;">A carregar QR Code...</span>
-            </div>
-          </div>
-
-          <div id="modeCode" style="display:none; padding-top:8px;">
-            <p style="font-size:12px; color:var(--muted); margin-bottom:12px;">Digite o número com DDD (12 dígitos ex: 559484274490):</p>
-            <div class="field">
-              <input type="tel" id="inpPhone" placeholder="559484274490">
-            </div>
-            <button class="btn primary small" style="margin-top:8px;" onclick="requestPairCode()">Gerar Código no App</button>
-            <div id="codeResult" style="display:none;">
-              <p style="font-size:11px; color:var(--muted); margin-top:8px; text-align:center;">Insira este código no seu WhatsApp:</p>
-              <div class="code-display" id="codeText">----</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <b>Ações de Sessão</b>
-          <button class="btn danger small" onclick="resetSession()">Apagar Sessão e Refazer Pareamento</button>
-        </div>
-
-        <div class="card">
-          <b>Token de Envio (x-token)</b>
-          <input type="text" id="tokenView" readonly style="margin-top: 4px;">
-        </div>
-      </div>
-    </section>
-
-    <!-- TELA 4: NOVO DISPARO COM AGENDADOR -->
-    <section class="screen" id="s-novo" hidden>
-      <div class="bar"><button class="btn small" onclick="goTo('home')">← Voltar</button><h1>Novo Disparo</h1></div>
-      <div class="body">
-        <div class="field"><label>Nome Técnico (slug)</label><input type="text" id="inpSlug" placeholder="turno"></div>
-        <div class="field"><label>Nome Visual</label><input type="text" id="inpName" placeholder="Relatório de Fim de Turno"></div>
-        <div class="field"><label>Grupo do WhatsApp</label><select id="inpGroup"><option value="">A carregar grupos...</option></select></div>
-        
-        <div class="field">
-          <label>Agendador Automático</label>
-          <select id="inpSchedType" onchange="toggleSchedFields()">
-            <option value="none">Apenas Envio Manual (via API/Excel)</option>
-            <option value="fixed">Horários Fixos (ex: 06:40, 18:40)</option>
-            <option value="interval">Intervalo Recorrente (em minutos)</option>
-          </select>
-        </div>
-
-        <div class="field" id="fieldSchedValue" style="display:none;">
-          <label id="lblSchedValue">Valor do Agendamento</label>
-          <input type="text" id="inpSchedValue" placeholder="06:40, 18:40">
-        </div>
-
-        <div class="field"><label>Legenda Padrão</label><textarea id="inpCaption" rows="3">Relatório de Produção · {data} {hora}</textarea></div>
-        <button class="btn primary" onclick="saveDispatch()">Salvar Disparo</button>
-      </div>
-    </section>
+  <div class="card">
+    <div>Status do Servidor: <span id="server-status">Testando...</span></div>
+    <div>WhatsApp: <span id="wa-status">Testando...</span></div>
   </div>
 
-  <nav>
-    <button class="tab" onclick="goTo('home')" id="tab-home" aria-current="page">Disparos</button>
-    <button class="tab" onclick="goTo('hist')" id="tab-hist">Histórico</button>
-    <button class="tab" onclick="goTo('conn')" id="tab-conn">Conexão</button>
-  </nav>
-</div>
+  <div class="card">
+    <strong>Painel de Diagnóstico (Testes de Conexão)</strong>
+    <pre id="debug-log">Iniciando testes no app...</pre>
+    <button onclick="executarTestes()">Refazer Teste de Conexão</button>
+  </div>
 
-<div id="toast"></div>
+  <script>
+    const LOG = document.getElementById('debug-log');
+    function log(msg) {
+      LOG.textContent += '\n' + new Date().toLocaleTimeString() + ' - ' + msg;
+      LOG.scrollTop = LOG.scrollHeight;
+    }
 
-<script>
-let token = localStorage.getItem('app_token') || 'minhasenha';
-document.getElementById('tokenView').value = token;
-let qrInterval = null;
+    async function testarEndpoint(url) {
+      log('Tentando conectar em: ' + url);
+      try {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: { 'x-token': 'minhasenha' }
+        });
+        log('-> Resposta HTTP Status: ' + res.status);
+        if (res.ok) {
+          const data = await res.json();
+          log('-> Sucesso! Resposta: ' + JSON.stringify(data));
+          return data;
+        }
+      } catch (err) {
+        log('-> ERRO DE REDE: ' + err.message);
+      }
+      return null;
+    }
 
-function toast(msg) {
-  let t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
+    async function executarTestes() {
+      LOG.textContent = 'Iniciando diagnóstico...';
+      
+      // Teste 1: 127.0.0.1
+      let res = await testarEndpoint('http://127.0.0.1:3000/status');
+      
+      // Teste 2: localhost
+      if (!res) {
+        log('Tentando via localhost...');
+        res = await testarEndpoint('http://localhost:3000/status');
+      }
 
-function toggleSchedFields() {
-  let type = document.getElementById('inpSchedType').value;
-  let box = document.getElementById('fieldSchedValue');
-  let lbl = document.getElementById('lblSchedValue');
-  let inp = document.getElementById('inpSchedValue');
+      const elServer = document.getElementById('server-status');
+      const elWa = document.getElementById('wa-status');
 
-  if (type === 'none') {
-    box.style.display = 'none';
-  } else if (type === 'fixed') {
-    box.style.display = 'flex';
-    lbl.textContent = 'Horários Fixos (separados por vírgula)';
-    inp.placeholder = '06:40, 18:40';
-  } else if (type === 'interval') {
-    box.style.display = 'flex';
-    lbl.textContent = 'Intervalo em Minutos';
-    inp.placeholder = '60';
-  }
-}
+      if (res && res.ok) {
+        elServer.className = 'status-ok';
+        elServer.textContent = 'ONLINE (Porta 3000)';
+        elWa.className = 'status-ok';
+        elWa.textContent = res.whatsapp || 'Desconhecido';
+      } else {
+        elServer.className = 'status-err';
+        elServer.textContent = 'FALHA DE CONEXÃO';
+        elWa.className = 'status-err';
+        elWa.textContent = 'INDISPONÍVEL';
+      }
+    }
 
-function goTo(screen) {
-  if(qrInterval) { clearInterval(qrInterval); qrInterval = null; }
-  ['home', 'hist', 'conn', 'novo'].forEach(s => {
-    document.getElementById('s-' + s).hidden = (s !== screen);
-    let tab = document.getElementById('tab-' + s);
-    if(tab) tab.removeAttribute('aria-current');
-  });
-  let activeTab = document.getElementById('tab-' + screen);
-  if(activeTab) activeTab.setAttribute('aria-current', 'page');
-
-  if(screen === 'home') loadDispatches();
-  if(screen === 'hist') loadHistory();
-  if(screen === 'conn') checkStatus();
-  if(screen === 'novo') loadGroups();
-}
-
-async function api(path, options = {}) {
-  options.headers = { ...options.headers, 'x-token': token };
-  try {
-    let res = await fetch('http://127.0.0.1:3000' + path, options);
-    return await res.json();
-  } catch(e) {
-    return null;
-  }
-}
-
-async function checkStatus() {
-  let data = await api('/status');
-  if(!data) return;
-  let badge = document.getElementById('statusBadge');
-  let txt = document.getElementById('connStatusText');
-  let pairPanel = document.getElementById('pairPanel');
-
-  if(data.whatsapp === 'open') {
-    badge.innerHTML = '<i class="dot"></i>Conectado';
-    txt.textContent = 'WhatsApp ativo e pronto a enviar mensagens.';
-    pairPanel.style.display = 'none';
-    if(qrInterval) { clearInterval(qrInterval); qrInterval = null; }
-  } else {
-    badge.innerHTML = '<i class="dot" style="background:var(--danger)"></i>Aguardando Conexão';
-    txt.textContent = 'WhatsApp desconectado. Escolha uma opção abaixo para conectar.';
-    pairPanel.style.display = 'flex';
-    fetchQrCode();
-    if(!qrInterval) qrInterval = setInterval(fetchQrCode, 4000);
-  }
-}
-
-function switchPairMethod(method) {
-  document.getElementById('btnTabQr').classList.toggle('active', method === 'qr');
-  document.getElementById('btnTabCode').classList.toggle('active', method === 'code');
-  document.getElementById('modeQr').style.display = method === 'qr' ? 'block' : 'none';
-  document.getElementById('modeCode').style.display = method === 'code' ? 'block' : 'none';
-}
-
-async function fetchQrCode() {
-  let modeQr = document.getElementById('modeQr');
-  if(modeQr.style.display === 'none') return;
-  let data = await api('/qr');
-  let box = document.getElementById('qrBox');
-  if(data && data.ok && data.qr) {
-    box.innerHTML = `<img src="${data.qr}" style="width:200px; height:200px; border-radius:12px; border:1px solid var(--line);">`;
-  }
-}
-
-async function requestPairCode() {
-  let phone = document.getElementById('inpPhone').value.trim();
-  if(!phone) { toast('Digite o número com DDD'); return; }
-  toast('A solicitar código...');
-  
-  let res = await api('/pair-code', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone })
-  });
-
-  if(res && res.ok && res.code) {
-    document.getElementById('codeText').textContent = res.code;
-    document.getElementById('codeResult').style.display = 'block';
-    toast('Código gerado com sucesso!');
-  } else {
-    toast(res?.error || 'Erro ao obter código');
-  }
-}
-
-async function loadDispatches() {
-  checkStatus();
-  let data = await api('/dispatches');
-  if(!data || !data.dispatches) return;
-  let list = document.getElementById('dispatchesList');
-  if(data.dispatches.length === 0) {
-    list.innerHTML = '<p style="color:var(--muted); text-align:center; padding:20px;">Nenhum disparo configurado.</p>';
-    return;
-  }
-  list.innerHTML = data.dispatches.map(d => `
-    <div class="card">
-      <b>${d.name}</b>
-      <span style="color:var(--muted); font-size:12px;">Grupo: ${d.groupName || d.groupJid}</span>
-      <span style="font-family:monospace; font-size:11px; color:var(--accent);">Agendamento: ${d.schedType === 'fixed' ? 'Fixos (' + d.schedValue + ')' : d.schedType === 'interval' ? 'A cada ' + d.schedValue + ' min' : 'Manual'}</span>
-      <button class="btn danger small" onclick="deleteDispatch('${d.slug}')">Excluir</button>
-    </div>
-  `).join('');
-}
-
-async function loadGroups() {
-  let select = document.getElementById('inpGroup');
-  select.innerHTML = '<option value="">A carregar grupos do WhatsApp...</option>';
-  let data = await api('/groups');
-  if(!data || !data.groups) {
-    select.innerHTML = '<option value="">Erro ao carregar (WhatsApp ligado?)</option>';
-    return;
-  }
-  select.innerHTML = data.groups.map(g => `<option value="${g.id}|${g.name}">${g.name} (${g.participants} membros)</option>`).join('');
-}
-
-async function saveDispatch() {
-  let slug = document.getElementById('inpSlug').value.trim();
-  let name = document.getElementById('inpName').value.trim();
-  let groupVal = document.getElementById('inpGroup').value;
-  let schedType = document.getElementById('inpSchedType').value;
-  let schedValue = document.getElementById('inpSchedValue').value.trim();
-  let caption = document.getElementById('inpCaption').value;
-
-  if(!slug || !name || !groupVal) { toast('Preencha todos os campos!'); return; }
-
-  let parts = groupVal.split('|');
-  let res = await api('/dispatches/' + slug, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, groupJid: parts[0], groupName: parts[1], caption, schedType, schedValue })
-  });
-
-  if(res && res.ok) {
-    toast('Disparo guardado com sucesso!');
-    goTo('home');
-  } else {
-    toast('Erro ao guardar.');
-  }
-}
-
-async function deleteDispatch(slug) {
-  if(!confirm('Deseja excluir este disparo?')) return;
-  let res = await api('/dispatches/' + slug, { method: 'DELETE' });
-  if(res && res.ok) { toast('Excluído com sucesso'); loadDispatches(); }
-}
-
-async function loadHistory() {
-  let data = await api('/history');
-  if(!data || !data.history) return;
-  let list = document.getElementById('historyList');
-  if(data.history.length === 0) {
-    list.innerHTML = '<p style="color:var(--muted); text-align:center; padding:20px;">Nenhum envio recente.</p>';
-    return;
-  }
-  list.innerHTML = data.history.map(h => `
-    <div class="card">
-      <div style="display:flex; justify-content:space-between;">
-        <b>${h.name || h.slug}</b>
-        <span style="color:${h.ok ? 'var(--accent)' : 'var(--danger)'}; font-size:12px;">${h.ok ? (h.auto ? 'Automático' : 'Sucesso') : 'Falha'}</span>
-      </div>
-      <span style="color:var(--muted); font-size:12px;">Grupo: ${h.group || 'Direto'}</span>
-      <span style="color:var(--muted); font-size:11px;">${new Date(h.when).toLocaleString()}</span>
-    </div>
-  `).join('');
-}
-
-async function resetSession() {
-  if(!confirm('Tem certeza? Isto vai apagar a sessão atual do WhatsApp e solicitar novo pareamento.')) return;
-  let res = await api('/reset-session', { method: 'POST' });
-  if(res && res.ok) {
-    toast('Sessão reiniciada.');
-    goTo('conn');
-  }
-}
-
-checkStatus();
-</script>
+    window.onload = executarTestes;
+  </script>
 </body>
 </html>
