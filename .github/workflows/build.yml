@@ -26,6 +26,19 @@ jobs:
           npx @capacitor/cli add android || true
           npx @capacitor/cli sync android
 
+      - name: Corrigir conflito de duplicidade Kotlin
+        run: |
+          cat << 'GROOVY' >> android/app/build.gradle
+
+          configurations.all {
+              resolutionStrategy.eachDependency { details ->
+                  if (details.requested.group == 'org.jetbrains.kotlin' && (details.requested.name == 'kotlin-stdlib-jdk7' || details.requested.name == 'kotlin-stdlib-jdk8')) {
+                      details.useVersion '1.8.22'
+                  }
+              }
+          }
+          GROOVY
+
       - name: Configurar Java JDK 21
         uses: actions/setup-java@v4
         with:
