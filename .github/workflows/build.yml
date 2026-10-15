@@ -12,10 +12,10 @@ jobs:
       - name: Baixar Codigo
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Configurar Java JDK 21
         uses: actions/setup-java@v4
@@ -39,7 +39,7 @@ jobs:
             tar -xf data.tar.gz
           fi
 
-          # Localiza o executavel node independentemente do caminho do diretorio do Termux
+          # Localiza o executavel node extraido do pacote Termux
           NODE_BIN=$(find . -type f -name "node" | head -n 1)
 
           if [ -n "$NODE_BIN" ]; then
