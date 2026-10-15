@@ -3,7 +3,6 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
-/* Layout: one phone-width column; 3 tabs (Disparos, Histórico, Conexão) plus 2 pushed screens (Novo disparo, Escolher grupo). Dark-first utility look, WhatsApp-green accent. */
 :root{
   --font-ui:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --font-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
@@ -24,20 +23,6 @@
   --danger:#FF8A8A;
   --danger-soft:rgba(255,138,138,.12);
   color-scheme:dark;
-}
-@media (prefers-color-scheme:light){
-  :root:not([data-theme="dark"]){
-    --bg-outer:#E4ECE7;--bg:#F4F8F5;--surface:#FFFFFF;--line:#D3E0D8;--line-strong:#A9BDB1;
-    --fg:#12211A;--muted:#55695E;--accent:#0B7F47;--accent-ink:#FFFFFF;--accent-text:#0B7F47;
-    --accent-soft:rgba(11,127,71,.10);--line-accent:#9CCDB4;--off-track:#C5D4CB;--off-knob:#FFFFFF;
-    --danger:#B3261E;--danger-soft:rgba(179,38,30,.08);color-scheme:light;
-  }
-}
-:root[data-theme="light"]{
-  --bg-outer:#E4ECE7;--bg:#F4F8F5;--surface:#FFFFFF;--line:#D3E0D8;--line-strong:#A9BDB1;
-  --fg:#12211A;--muted:#55695E;--accent:#0B7F47;--accent-ink:#FFFFFF;--accent-text:#0B7F47;
-  --accent-soft:rgba(11,127,71,.10);--line-accent:#9CCDB4;--off-track:#C5D4CB;--off-knob:#FFFFFF;
-  --danger:#B3261E;--danger-soft:rgba(179,38,30,.08);color-scheme:light;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -154,9 +139,8 @@ input[type=file]{font-size:13px;max-width:100%}
 .checks div+div{border-top:1px solid var(--line)}
 .mini{width:24px;height:24px;flex:none;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:flex;align-items:center;justify-content:center}
 .qr{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:center}
-.qr svg{width:min(220px,100%);height:auto;border-radius:10px}
+.qr img{width:min(220px,100%);height:auto;border-radius:10px}
 
-/* Estilo do Registrador de Log - Mantém padrão nativo */
 .log-box{
   background:var(--surface);
   border:1px solid var(--line);
@@ -182,7 +166,6 @@ input[type=file]{font-size:13px;max-width:100%}
 .tab[aria-current="page"]{color:var(--accent-text);font-weight:700}
 #toast{position:absolute;left:16px;right:16px;bottom:12px;z-index:5;padding:12px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:13px;font-weight:600;text-align:center;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
 #toast.show{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
 
 <div id="app">
@@ -212,8 +195,21 @@ input[type=file]{font-size:13px;max-width:100%}
   var norm = function (s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
   var slug = function (s) { return norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
 
-  var IP = '127.0.0.1:3000';
+  var BACKEND_URL = 'http://127.0.0.1:3000';
   var TOKEN = 'k7Qx-92mf-LpT4';
+
+  var state = {
+    screen: 'home',
+    waStatus: 'verificando',
+    qrImage: null,
+    groups: [],
+    dispatches: [
+      { id: 1, name: 'Relatório de Fim de Turno', group: 'Produção Lavra Norte', mode: 'times', times: ['06:40', '18:40'], interval: 120, source: 'excel', caption: 'Relatório · {data} {hora}', active: true, last: '' }
+    ],
+    history: [],
+    logs: [],
+    draft: null, editingId: null, errors: {}, confirmDel: false, q: '', tokenShown: false, qr: false, nextId: 2
+  };
 
   var I = {
     send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
@@ -230,41 +226,38 @@ input[type=file]{font-size:13px;max-width:100%}
     copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
     x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
     alert: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
-    qr: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14.01" y2="14"/><line x1="21" y1="14" x2="21.01" y2="14"/><line x1="14" y1="21" x2="14.01" y2="21"/><line x1="21" y1="21" x2="21.01" y2="21"/><line x1="17.5" y1="17.5" x2="17.51" y2="17.5"/>'
+    qr: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14.01" y2="14"/><line x1="21" y1="14" x2="21.01" y2="21"/><line x1="14" y1="21" x2="14.01" y2="21"/><line x1="21" y1="21" x2="21.01" y2="21"/><line x1="17.5" y1="17.5" x2="17.51" y2="17.5"/>'
   };
   var ic = function (n, s, sw) {
     return '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + I[n] + '</svg>';
   };
 
-  var state = {
-    screen: 'home',
-    groups: [
-      { name: 'Produção Lavra Norte', n: 38 },
-      { name: 'Diretoria', n: 9 },
-      { name: 'Manutenção de Equipamentos', n: 24 },
-      { name: 'Logística e Transporte', n: 17 },
-      { name: 'Segurança do Trabalho', n: 12 },
-      { name: 'Teste', n: 2 }
-    ],
-    dispatches: [
-      { id: 1, name: 'Relatório de Fim de Turno', group: 'Produção Lavra Norte', mode: 'times', times: ['06:40', '18:40'], interval: 120, source: 'excel', caption: 'Relatório de Produção · {data} {hora}', active: true, last: 'hoje às 18:40' },
-      { id: 2, name: 'Resumo de Tonelagem', group: 'Diretoria', mode: 'interval', times: [], interval: 120, source: 'excel', caption: 'Resumo de Tonelagem · {data} {hora}', active: true, last: 'hoje às 20:00' },
-      { id: 3, name: 'Teste interno', group: 'Teste', mode: 'times', times: ['12:00'], interval: 120, source: 'excel', caption: 'Teste · {data} {hora}', active: false, last: '' }
-    ],
-    history: [
-      { name: 'Resumo de Tonelagem', group: 'Diretoria', when: 'Hoje, 20:00', ok: true },
-      { name: 'Relatório de Fim de Turno', group: 'Produção Lavra Norte', when: 'Hoje, 18:40', ok: true },
-      { name: 'Resumo de Tonelagem', group: 'Diretoria', when: 'Hoje, 18:00', ok: false, err: 'Celular sem Wi-Fi no momento do envio' },
-      { name: 'Relatório de Fim de Turno', group: 'Produção Lavra Norte', when: 'Hoje, 06:40', ok: true }
-    ],
-    logs: [
-      { time: '20:00:02', msg: 'POST /send/resumo-de-tonelagem 200 OK', type: 'ok' },
-      { time: '18:40:01', msg: 'POST /send/relatorio-de-fim-de-turno 200 OK', type: 'ok' },
-      { time: '18:00:00', msg: 'POST /send/resumo-de-tonelagem 500 Sem Wi-Fi', type: 'err' },
-      { time: '06:40:01', msg: 'POST /send/relatorio-de-fim-de-turno 200 OK', type: 'ok' }
-    ],
-    draft: null, editingId: null, errors: {}, confirmDel: false, q: '', tokenShown: false, qr: false, nextId: 4
-  };
+  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  var timeNow = function () { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); };
+
+  function addLog(msg, type) {
+    state.logs.unshift({ time: timeNow(), msg: msg, type: type || 'normal' });
+    if (state.logs.length > 50) state.logs.pop();
+    if (state.screen === 'conn') renderConn();
+  }
+
+  // Polling real do Backend Node.js
+  async function pollBackendStatus() {
+    try {
+      var res = await fetch(BACKEND_URL + '/status');
+      var data = await res.json();
+      state.waStatus = data.whatsapp || 'conectado';
+      state.qrImage = data.qr || null;
+      if (data.groups) state.groups = data.groups;
+      addLog('GET /status 200 OK - WA: ' + state.waStatus, 'ok');
+    } catch (e) {
+      state.waStatus = 'offline';
+      addLog('GET /status falhou: Servidor local inacessível', 'err');
+    }
+    if (state.screen === 'conn' || state.screen === 'home') renderNav();
+  }
+  setInterval(pollBackendStatus, 4000);
+  pollBackendStatus();
 
   var INTERVALS = [[15, '15 minutos'], [30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [240, '4 horas'], [360, '6 horas']];
   var intervalText = function (m) { var f = INTERVALS.filter(function (x) { return x[0] === m; })[0]; return f ? f[1] : m + ' minutos'; };
@@ -273,45 +266,19 @@ input[type=file]{font-size:13px;max-width:100%}
     if (d.mode === 'interval') return 'A cada ' + intervalText(d.interval);
     return d.times.length ? 'Todo dia às ' + joinList(d.times) : 'Sem horários';
   };
-  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
   var nowLabel = function () { var d = new Date(); return 'Hoje, ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes()); };
-  var timeNow = function () { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); };
 
-  function addLog(msg, type) {
-    state.logs.unshift({ time: timeNow(), msg: msg, type: type || 'normal' });
-    if (state.screen === 'conn') renderConn();
-  }
-
-  function nextSend() {
-    var now = new Date(), best = null;
-    state.dispatches.filter(function (d) { return d.active && d.mode === 'times'; }).forEach(function (d) {
-      d.times.forEach(function (t) {
-        var p = t.split(':').map(Number), c = new Date(now);
-        c.setHours(p[0], p[1], 0, 0);
-        if (c <= now) c.setDate(c.getDate() + 1);
-        if (!best || c < best.at) best = { at: c, name: d.name, time: t };
-      });
-    });
-    if (best) best.tomorrow = best.at.getDate() !== now.getDate();
-    return best;
-  }
-
-  var toastTimer;
   function toast(msg) {
     var t = $('#toast');
     t.textContent = msg;
     t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+    setTimeout(function () { t.classList.remove('show'); }, 2600);
   }
 
   function copyText(text) {
-    var p;
-    try { p = navigator.clipboard.writeText(text); } catch (e) { p = Promise.reject(e); }
-    p.then(function () { toast('Copiado'); }, function () { toast('Não deu para copiar. Toque no texto para selecionar.'); });
+    navigator.clipboard.writeText(text).then(function () { toast('Copiado'); });
   }
 
-  /* ---------- renders ---------- */
   function renderNav() {
     var tabs = [['home', 'send', 'Disparos'], ['hist', 'list', 'Histórico'], ['conn', 'wifi', 'Conexão']];
     document.querySelectorAll('.tab').forEach(function (b, i) {
@@ -324,24 +291,21 @@ input[type=file]{font-size:13px;max-width:100%}
     var last = !d.active ? 'Pausado' : (d.last ? ic('check', 16, 2.5) + 'Enviado ' + d.last : 'Ainda não enviado');
     return '<article class="card' + (d.active ? '' : ' off') + '">' +
       '<div class="card-top"><button class="card-title" data-act="edit" data-id="' + d.id + '">' + esc(d.name) + '</button>' +
-      '<button class="sw" data-act="toggle" data-id="' + d.id + '" aria-pressed="' + d.active + '" aria-label="' + (d.active ? 'Pausar ' : 'Ativar ') + esc(d.name) + '"><span class="track"><span class="knob"></span></span></button></div>' +
+      '<button class="sw" data-act="toggle" data-id="' + d.id + '" aria-pressed="' + d.active + '"><span class="track"><span class="knob"></span></span></button></div>' +
       '<div class="meta">' + ic('users', 16) + esc(d.group) + '</div>' +
-      '<div class="meta">' + ic('clock', 16) + esc(schedText(d)) + ' · ' + (d.source === 'excel' ? 'Excel' : 'Arquivo manual') + '</div>' +
+      '<div class="meta">' + ic('clock', 16) + esc(schedText(d)) + ' · ' + (d.source === 'excel' ? 'Excel' : 'Manual') + '</div>' +
       '<div class="meta' + (d.active && d.last ? ' okt' : '') + '">' + last + '</div></article>';
   }
 
   function renderHome() {
-    var n = nextSend(), act = state.dispatches.filter(function (d) { return d.active; }).length;
-    var nextHtml = n
-      ? '<div class="big">' + n.time + '</div><div><div class="lbl">Próximo envio · ' + (n.tomorrow ? 'amanhã' : 'hoje') + '</div><div class="nm">' + esc(n.name) + '</div></div>'
-      : '<div><div class="lbl">Próximo envio</div><div class="nm">Nenhum horário agendado</div></div>';
+    var act = state.dispatches.filter(function (d) { return d.active; }).length;
+    var waText = state.waStatus === 'open' ? 'WhatsApp conectado' : 'WhatsApp aguardando QR';
     $('#s-home').innerHTML =
       '<div class="body">' +
-      '<header class="top"><h1>Disparos</h1><span class="pill"><i class="dot"></i>WhatsApp conectado</span></header>' +
-      '<p class="proto">Protótipo para testar a navegação. Nada é enviado de verdade.</p>' +
-      '<div class="next">' + nextHtml + '</div>' +
+      '<header class="top"><h1>Disparos</h1><span class="pill"><i class="dot"></i>' + waText + '</span></header>' +
+      '<p class="proto">Backend Node.js nativo ativo na porta 3000.</p>' +
       '<div class="sect"><h2>Meus disparos</h2><span class="muted sm">' + act + ' ativos de ' + state.dispatches.length + '</span></div>' +
-      '<div class="cards">' + (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo ainda. Toque em Novo disparo para criar o primeiro.</div>') + '</div>' +
+      '<div class="cards">' + (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo ainda.</div>') + '</div>' +
       '</div>' +
       '<div class="foot"><button class="btn primary" data-act="new">' + ic('plus', 20, 2.5) + 'Novo disparo</button></div>';
   }
@@ -349,61 +313,34 @@ input[type=file]{font-size:13px;max-width:100%}
   function renderHist() {
     $('#s-hist').innerHTML =
       '<div class="body"><h1>Histórico</h1>' +
-      '<p class="proto">Os envios abaixo são exemplos. Testes feitos no app aparecem no topo.</p>' +
       '<div class="cards">' + (state.history.length ? state.history.map(function (h) {
         return '<div class="hitem"><span class="hic' + (h.ok ? '' : ' bad') + '">' + ic(h.ok ? 'check' : 'alert', 16, 2.5) + '</span>' +
           '<div class="t"><b>' + esc(h.name) + '</b><span>' + esc(h.group) + ' · ' + esc(h.when) + '</span>' +
-          (h.ok ? '<span>' + (h.test ? 'Teste simulado' : 'Entregue') + '</span>' : '<span class="bad">Falhou: ' + esc(h.err) + '</span>') + '</div></div>';
-      }).join('') : '<div class="empty">Nenhum envio registrado ainda.</div>') + '</div></div>';
-  }
-
-  function qrSvg() {
-    var n = 25, c = 8, pad = 2, seed = 11;
-    var rnd = function () { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
-    var fin = function (x, y, ox, oy) {
-      var dx = x - ox, dy = y - oy;
-      return dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4);
-    };
-    var r = '';
-    for (var y = 0; y < n; y++) {
-      for (var x = 0; x < n; x++) {
-        var on;
-        if (x < 8 && y < 8) on = x < 7 && y < 7 && fin(x, y, 0, 0);
-        else if (x >= n - 8 && y < 8) on = x >= n - 7 && y < 7 && fin(x, y, n - 7, 0);
-        else if (x < 8 && y >= n - 8) on = x < 7 && y >= n - 7 && fin(x, y, 0, n - 7);
-        else on = rnd() > 0.52;
-        if (on) r += '<rect x="' + (x + pad) * c + '" y="' + (y + pad) * c + '" width="' + c + '" height="' + c + '"/>';
-      }
-    }
-    var s = (n + pad * 2) * c;
-    return '<svg viewBox="0 0 ' + s + ' ' + s + '" role="img" aria-label="QR code de exemplo"><rect width="' + s + '" height="' + s + '" fill="#fff"/><g fill="#111">' + r + '</g></svg>';
+          (h.ok ? '<span>Entregue</span>' : '<span class="bad">Falhou: ' + esc(h.err) + '</span>') + '</div></div>';
+      }).join('') : '<div class="empty">Nenhum envio recente registrado.</div>') + '</div></div>';
   }
 
   function renderConn() {
     var tok = state.tokenShown ? TOKEN : '••••-•••-••••';
+    var ipPort = '127.0.0.1:3000';
+    var waStatusBadge = state.waStatus === 'open' ? 'Conectado e Operacional' : 'Necessita leitura de QR Code';
     $('#s-conn').innerHTML =
       '<div class="body"><h1>Conexão</h1>' +
-      '<div class="stat"><span class="ic">' + ic('check', 24, 2.5) + '</span><div><b>WhatsApp conectado</b><span>Funcionando há 3 dias, sem quedas (exemplo)</span></div></div>' +
-      '<div class="box"><div class="lbl2" style="font-size:13px;font-weight:700;color:var(--muted)">Endereço para o Excel enviar</div>' +
-      '<div class="kv"><span class="mono">' + IP + '</span><button class="btn primary small" data-act="copy" data-text="' + IP + '">Copiar</button></div>' +
-      '<p class="help">Cole este endereço no código do Excel. O celular e o computador precisam estar no mesmo Wi-Fi.</p></div>' +
-      '<div class="box"><div class="lbl2" style="font-size:13px;font-weight:700;color:var(--muted)">Senha de envio</div>' +
-      '<div class="kv"><span class="mono">' + tok + '</span><span class="row"><button class="btn ghost small" data-act="tok">' + (state.tokenShown ? 'Ocultar' : 'Mostrar') + '</button><button class="btn primary small" data-act="copy" data-text="' + TOKEN + '">Copiar</button></span></div>' +
-      '<p class="help">O Excel manda esta senha junto com o arquivo. Sem ela, o app recusa o envio.</p></div>' +
-      '<div class="box"><div class="lbl2" style="font-size:13px;font-weight:700;color:var(--muted)">Registrador de Logs / Requisições</div>' +
+      '<div class="stat"><span class="ic">' + ic('wifi', 24, 2.5) + '</span><div><b>Status: ' + waStatusBadge + '</b><span>Motor Baileys rodando localmente no APK</span></div></div>' +
+      '<div class="box"><div class="lbl2">Endereço local interno</div>' +
+      '<div class="kv"><span class="mono">' + ipPort + '</span><button class="btn primary small" data-act="copy" data-text="' + ipPort + '">Copiar</button></div></div>' +
+      '<div class="box"><div class="lbl2">Senha de Token de Acesso</div>' +
+      '<div class="kv"><span class="mono">' + tok + '</span><span class="row"><button class="btn ghost small" data-act="tok">' + (state.tokenShown ? 'Ocultar' : 'Mostrar') + '</button><button class="btn primary small" data-act="copy" data-text="' + TOKEN + '">Copiar</button></span></div></div>' +
+      '<div class="box"><div class="lbl2">Registrador de Logs / Requisições Reais</div>' +
       '<div class="log-box">' +
       (state.logs.length ? state.logs.map(function(l) {
         var cls = l.type === 'ok' ? 'log-ok' : (l.type === 'err' ? 'log-err' : 'log-msg');
         return '<div class="log-entry"><span class="log-time">' + l.time + '</span><span class="' + cls + '">' + esc(l.msg) + '</span></div>';
-      }).join('') : '<div class="log-entry"><span class="log-msg">Nenhum evento registrado.</span></div>') +
+      }).join('') : '<div class="log-entry"><span class="log-msg">Aguardando requisições...</span></div>') +
       '</div></div>' +
-      '<div class="box"><div class="lbl2" style="font-size:13px;font-weight:700;color:var(--muted)">Para o app não parar</div>' +
-      '<div class="checks">' +
-      ['Serviço em segundo plano ativo', 'Sem restrição de bateria', 'Conectado ao Wi-Fi'].map(function (t) { return '<div><span class="mini">' + ic('check', 14, 3.5) + '</span>' + t + '</div>'; }).join('') +
-      '</div></div>' +
-      '<div class="box"><div class="lbl2" style="font-size:13px;font-weight:700;color:var(--muted)">Trocar número do WhatsApp</div>' +
-      '<button class="btn ghost block" data-act="qr">' + ic('qr', 20) + (state.qr ? 'Esconder QR code' : 'Ler novo QR code') + '</button>' +
-      (state.qr ? '<div class="qr">' + qrSvg() + '<p class="help">QR de exemplo. No app de verdade, abra o WhatsApp, vá em Aparelhos conectados e escaneie este código.</p></div>' : '') +
+      '<div class="box"><div class="lbl2">Pareamento WhatsApp</div>' +
+      '<button class="btn ghost block" data-act="qr">' + ic('qr', 20) + (state.qr ? 'Ocultar QR code' : 'Mostrar QR Code do Servidor') + '</button>' +
+      (state.qr ? '<div class="qr">' + (state.qrImage ? '<img src="' + state.qrImage + '" alt="QR Code"/>' : '<p class="help">A carregar QR Code do servidor...</p>') + '</div>' : '') +
       '</div></div>';
   }
 
@@ -411,55 +348,34 @@ input[type=file]{font-size:13px;max-width:100%}
     var d = state.draft, e = state.errors, edit = state.editingId !== null;
     var when = d.mode === 'times'
       ? '<div class="chips">' + d.times.map(function (t) {
-          return '<span class="chip">' + t + '<button data-act="delTime" data-t="' + t + '" aria-label="Remover horário ' + t + '">' + ic('x', 14, 2.5) + '</button></span>';
+          return '<span class="chip">' + t + '<button data-act="delTime" data-t="' + t + '">' + ic('x', 14, 2.5) + '</button></span>';
         }).join('') + '</div>' +
-        '<div class="row"><input type="time" id="newTime" data-field="newTime" value="' + esc(d.newTime) + '" aria-label="Novo horário"><button class="btn outline small" data-act="addTime">Adicionar</button></div>' +
-        (e.times ? '<p class="err" role="alert">' + e.times + '</p>' : '')
-      : '<select id="interval" data-field="interval" aria-label="Intervalo entre envios">' + INTERVALS.map(function (x) {
+        '<div class="row"><input type="time" id="newTime" data-field="newTime" value="' + esc(d.newTime) + '"><button class="btn outline small" data-act="addTime">Adicionar</button></div>' +
+        (e.times ? '<p class="err">' + e.times + '</p>' : '')
+      : '<select id="interval" data-field="interval">' + INTERVALS.map(function (x) {
           return '<option value="' + x[0] + '"' + (d.interval === x[0] ? ' selected' : '') + '>A cada ' + x[1] + '</option>';
         }).join('') + '</select>';
-    var url = 'http://' + IP + '/send/' + (slug(d.name) || 'novo-disparo');
-    var source = d.source === 'excel'
-      ? '<div class="src"><div class="ttl">' + ic('file', 20) + 'Recebido do Excel (automático)</div>' +
-        '<div class="epbox"><span class="mono" id="ep">' + esc(url) + '</span><button class="btn primary small" id="epcopy" data-act="copy" data-text="' + esc(url) + '">Copiar</button></div></div>'
-      : '<div class="src"><div class="ttl">' + ic('file', 20) + 'Arquivo escolhido manualmente</div><input type="file" id="file" accept="image/*,.pdf" aria-label="Escolher arquivo"></div>';
+    var url = BACKEND_URL + '/send/' + (slug(d.name) || 'novo-disparo');
     $('#s-novo').innerHTML =
-      '<div class="bar"><button class="iconbtn" data-act="back" aria-label="Voltar">' + ic('back', 24) + '</button><h1>' + (edit ? 'Editar disparo' : 'Novo disparo') + '</h1></div>' +
+      '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>' + (edit ? 'Editar disparo' : 'Novo disparo') + '</h1></div>' +
       '<div class="body">' +
-      '<div class="field"><label for="nome">Nome do disparo</label><input type="text" id="nome" data-field="name" value="' + esc(d.name) + '" placeholder="Ex.: Relatório de Fim de Turno" autocomplete="off">' + (e.name ? '<p class="err" role="alert">' + e.name + '</p>' : '') + '</div>' +
-      '<div class="field"><span class="lbl2">De onde vem o arquivo</span>' +
-      '<div class="seg" role="group" aria-label="Origem do arquivo"><button data-act="source" data-v="excel" aria-pressed="' + (d.source === 'excel') + '">Excel</button><button data-act="source" data-v="manual" aria-pressed="' + (d.source === 'manual') + '">Manual</button></div>' + source + '</div>' +
+      '<div class="field"><label>Nome do disparo</label><input type="text" data-field="name" value="' + esc(d.name) + '" placeholder="Ex.: Relatório"></div>' +
+      '<div class="field"><span class="lbl2">Endpoint Gerado</span>' +
+      '<div class="epbox"><span class="mono">' + esc(url) + '</span><button class="btn primary small" data-act="copy" data-text="' + esc(url) + '">Copiar</button></div></div>' +
       '<div class="field"><span class="lbl2">Enviar para o grupo</span>' +
-      '<button class="picker' + (d.group ? '' : ' ph') + '" data-act="pickGroup"><span class="l">' + (d.group ? '<span class="avatar">' + esc(d.group.charAt(0)) + '</span>' + esc(d.group) : 'Escolher grupo') + '</span>' + ic('chev', 20) + '</button>' +
-      (e.group ? '<p class="err" role="alert">' + e.group + '</p>' : '') + '</div>' +
+      '<button class="picker" data-act="pickGroup"><span class="l">' + (d.group ? esc(d.group) : 'Escolher grupo') + '</span>' + ic('chev', 20) + '</button></div>' +
       '<div class="field"><span class="lbl2">Quando enviar</span>' +
-      '<div class="seg" role="group" aria-label="Tipo de agendamento"><button data-act="mode" data-v="times" aria-pressed="' + (d.mode === 'times') + '">Horários</button><button data-act="mode" data-v="interval" aria-pressed="' + (d.mode === 'interval') + '">A cada intervalo</button></div>' + when + '</div>' +
-      '<div class="field"><label for="legenda">Legenda da imagem</label><input type="text" id="legenda" data-field="caption" value="' + esc(d.caption) + '" autocomplete="off"><p class="help">Use {data} e {hora} para preencher sozinhos.</p></div>' +
-      (edit ? '<div class="field">' + (state.confirmDel
-        ? '<p class="err">Excluir este disparo? Isso não pode ser desfeito.</p><div class="row"><button class="btn ghost small" data-act="delCancel">Cancelar</button><button class="btn danger small" data-act="delYes">Sim, excluir</button></div>'
-        : '<button class="btn danger small" data-act="delAsk">Excluir disparo</button>') + '</div>' : '') +
+      '<div class="seg"><button data-act="mode" data-v="times" aria-pressed="' + (d.mode === 'times') + '">Horários</button><button data-act="mode" data-v="interval" aria-pressed="' + (d.mode === 'interval') + '">Intervalo</button></div>' + when + '</div>' +
       '</div>' +
-      '<div class="foot"><button class="btn outline" data-act="test">Enviar teste</button><button class="btn primary" data-act="save">Salvar disparo</button></div>';
-  }
-
-  function renderGList() {
-    var q = norm(state.q);
-    var list = state.groups.filter(function (g) { return norm(g.name).indexOf(q) !== -1; });
-    $('#gcount').textContent = list.length + (list.length === 1 ? ' grupo encontrado' : ' grupos encontrados') + ' no WhatsApp (exemplo)';
-    $('#glist').innerHTML = list.length ? list.map(function (g) {
-      var sel = state.draft && state.draft.group === g.name;
-      return '<button class="gitem" data-act="setGroup" data-name="' + esc(g.name) + '" aria-pressed="' + !!sel + '"><span class="avatar">' + esc(g.name.charAt(0)) + '</span>' +
-        '<span class="t">' + esc(g.name) + '<small>' + g.n + ' participantes</small></span>' + (sel ? '<span class="tick">' + ic('check', 14, 3.5) + '</span>' : '') + '</button>';
-    }).join('') : '<div class="empty">Nenhum grupo com esse nome.</div>';
+      '<div class="foot"><button class="btn outline" data-act="test">Testar</button><button class="btn primary" data-act="save">Salvar</button></div>';
   }
 
   function renderGrupos() {
     $('#s-grupos').innerHTML =
-      '<div class="bar"><button class="iconbtn" data-act="back" aria-label="Voltar">' + ic('back', 24) + '</button><h1>Escolher grupo</h1>' +
-      '<button class="iconbtn accent" data-act="refresh" aria-label="Atualizar lista de grupos">' + ic('refresh', 22) + '</button></div>' +
-      '<div class="body"><div class="field"><label class="sr" for="q">Buscar grupo</label><input type="search" id="q" data-field="q" placeholder="Buscar grupo" value="' + esc(state.q) + '" autocomplete="off"></div>' +
-      '<p class="muted sm" id="gcount"></p><div class="glist" id="glist"></div></div>';
-    renderGList();
+      '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>Escolher grupo</h1></div>' +
+      '<div class="body"><div class="glist">' + (state.groups.length ? state.groups.map(function(g){
+        return '<button class="gitem" data-act="setGroup" data-name="' + esc(g.name) + '"><span class="t">' + esc(g.name) + '<small>' + (g.participants || 0) + ' membros</small></span></button>';
+      }).join('') : '<div class="empty">Nenhum grupo sincronizado ainda pelo Baileys.</div>') + '</div></div>';
   }
 
   var RENDER = { home: renderHome, hist: renderHist, conn: renderConn, novo: renderNovo, grupos: renderGrupos };
@@ -470,82 +386,49 @@ input[type=file]{font-size:13px;max-width:100%}
     $('#nav').hidden = ['home', 'hist', 'conn'].indexOf(name) === -1;
     RENDER[name]();
     renderNav();
-    var b = $('#s-' + name + ' .body');
-    if (b) b.scrollTop = 0;
-  }
-
-  /* ---------- actions ---------- */
-  function openDraft(id) {
-    state.editingId = id;
-    state.errors = {};
-    state.confirmDel = false;
-    var src = id === null ? null : state.dispatches.filter(function (d) { return d.id === id; })[0];
-    state.draft = src
-      ? Object.assign({}, src, { times: src.times.slice(), newTime: '' })
-      : { name: '', group: '', mode: 'times', times: [], interval: 120, source: 'excel', caption: 'Relatório · {data} {hora}', newTime: '', active: true, last: '' };
-    show('novo');
   }
 
   var A = {
     tab: function (t) { show(t.dataset.tab); },
-    new: function () { openDraft(null); },
-    edit: function (t) { openDraft(Number(t.dataset.id)); },
-    toggle: function (t) {
-      var d = state.dispatches.filter(function (x) { return x.id === Number(t.dataset.id); })[0];
-      d.active = !d.active;
-      renderHome();
-      toast(d.active ? 'Disparo ativado' : 'Disparo pausado');
-      addLog('Disparo "' + d.name + '" ' + (d.active ? 'ativado' : 'pausado'), 'normal');
+    new: function () {
+      state.draft = { name: '', group: '', mode: 'times', times: [], interval: 120, source: 'excel', caption: '', newTime: '', active: true };
+      state.editingId = null;
+      show('novo');
     },
     back: function () { show(state.screen === 'grupos' ? 'novo' : 'home'); },
-    pickGroup: function () { state.q = ''; show('grupos'); },
-    setGroup: function (t) { state.draft.group = t.dataset.name; delete state.errors.group; show('novo'); },
-    refresh: function () { toast('Lista de grupos atualizada'); addLog('Busca de grupos atualizada via WhatsApp', 'normal'); },
-    source: function (t) { state.draft.source = t.dataset.v; renderNovo(); },
-    mode: function (t) { state.draft.mode = t.dataset.v; delete state.errors.times; renderNovo(); },
+    pickGroup: function () { show('grupos'); },
+    setGroup: function (t) { state.draft.group = t.dataset.name; show('novo'); },
+    mode: function (t) { state.draft.mode = t.dataset.v; renderNovo(); },
     addTime: function () {
-      var d = state.draft, v = d.newTime;
-      if (!/^\d{2}:\d{2}$/.test(v)) { state.errors.times = 'Escolha um horário válido.'; renderNovo(); return; }
-      if (d.times.indexOf(v) !== -1) { state.errors.times = 'Esse horário já está na lista.'; renderNovo(); return; }
-      d.times.push(v); d.times.sort(); d.newTime = ''; delete state.errors.times;
-      renderNovo();
+      var v = state.draft.newTime;
+      if (v && state.draft.times.indexOf(v) === -1) { state.draft.times.push(v); state.draft.times.sort(); state.draft.newTime = ''; renderNovo(); }
     },
     delTime: function (t) { state.draft.times = state.draft.times.filter(function (x) { return x !== t.dataset.t; }); renderNovo(); },
-    test: function () {
-      var d = state.draft;
-      if (!d.group) { state.errors.group = 'Escolha o grupo para fazer o teste.'; renderNovo(); return; }
-      state.history.unshift({ name: d.name.trim() || 'Disparo sem nome', group: d.group, when: nowLabel(), ok: true, test: true });
-      toast('Teste registrado no Histórico (simulação)');
-      addLog('POST /send/' + (slug(d.name) || 'teste') + ' 200 OK (Simulado)', 'ok');
-    },
     save: function () {
-      var d = state.draft, e = {};
-      if (!d.name.trim()) e.name = 'Dê um nome ao disparo.';
-      if (!d.group) e.group = 'Escolha o grupo que vai receber.';
-      if (d.mode === 'times' && d.times.length === 0) e.times = 'Adicione pelo menos um horário.';
-      if (Object.keys(e).length) { state.errors = e; renderNovo(); $('#s-novo .body').scrollTop = 0; return; }
-      var rec = { id: state.editingId !== null ? state.editingId : state.nextId++, name: d.name.trim(), group: d.group, mode: d.mode, times: d.times.slice(), interval: d.interval, source: d.source, caption: d.caption, active: d.active, last: d.last };
-      if (state.editingId !== null) {
-        state.dispatches = state.dispatches.map(function (x) { return x.id === rec.id ? rec : x; });
-      } else {
-        state.dispatches.push(rec);
+      state.dispatches.push(Object.assign({ id: state.nextId++ }, state.draft));
+      addLog('Disparo criado: ' + state.draft.name, 'ok');
+      show('home');
+      toast('Salvo com sucesso');
+    },
+    test: async function () {
+      try {
+        addLog('POST /test - Enviando teste manual...', 'normal');
+        var res = await fetch(BACKEND_URL + '/test', { method: 'POST' });
+        if (res.ok) {
+          toast('Teste enviado com sucesso!');
+          addLog('POST /test 200 OK', 'ok');
+        } else {
+          toast('Erro ao testar envio.');
+          addLog('POST /test falhou', 'err');
+        }
+      } catch (e) {
+        toast('Servidor offline.');
+        addLog('POST /test erro de conexão', 'err');
       }
-      show('home');
-      toast('Disparo salvo');
-      addLog('Configuração do disparo "' + rec.name + '" salva', 'normal');
     },
-    delAsk: function () { state.confirmDel = true; renderNovo(); },
-    delCancel: function () { state.confirmDel = false; renderNovo(); },
-    delYes: function () {
-      var name = state.draft.name;
-      state.dispatches = state.dispatches.filter(function (x) { return x.id !== state.editingId; });
-      show('home');
-      toast('Disparo excluído');
-      addLog('Disparo "' + name + '" removido', 'err');
-    },
-    copy: function (t) { copyText(t.dataset.text); addLog('Copiado para área de transferência: ' + t.dataset.text, 'normal'); },
+    copy: function (t) { copyText(t.dataset.text); },
     tok: function () { state.tokenShown = !state.tokenShown; renderConn(); },
-    qr: function () { state.qr = !state.qr; renderConn(); addLog(state.qr ? 'Solicitada leitura de QR Code' : 'QR Code ocultado', 'normal'); }
+    qr: function () { state.qr = !state.qr; renderConn(); }
   };
 
   document.addEventListener('click', function (ev) {
@@ -555,20 +438,10 @@ input[type=file]{font-size:13px;max-width:100%}
 
   document.addEventListener('input', function (ev) {
     var f = ev.target.dataset && ev.target.dataset.field;
-    if (!f) return;
-    if (f === 'q') { state.q = ev.target.value; renderGList(); return; }
-    if (!state.draft) return;
-    state.draft[f] = f === 'interval' ? Number(ev.target.value) : ev.target.value;
-    if (f === 'name') {
-      var url = 'http://' + IP + '/send/' + (slug(state.draft.name) || 'novo-disparo');
-      var ep = $('#ep'), cp = $('#epcopy');
-      if (ep) ep.textContent = url;
-      if (cp) cp.dataset.text = url;
-    }
+    if (f && state.draft) state.draft[f] = ev.target.value;
   });
 
   show('home');
 })();
 </script>
-
 </body></html>
