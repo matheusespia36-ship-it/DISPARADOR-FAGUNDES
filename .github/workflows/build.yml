@@ -43,13 +43,12 @@ jobs:
             exit 1
           fi
 
-      - name: Preparar Projeto Android do Zero
+      - name: Preparar Projeto Android
         run: |
           npm install --no-audit --no-fund
           mkdir -p www
           cp public/index.html www/index.html
 
-          # Remove pasta android antiga e gera uma nova com gradlew oficial
           rm -rf android
           npx @capacitor/cli add android
           npx @capacitor/cli sync android
@@ -64,7 +63,7 @@ jobs:
           cp package.json android/app/src/main/assets/nodejs-project/
           cp -r node_modules android/app/src/main/assets/nodejs-project/ || true
 
-          # Configura MainActivity para iniciar o Node.js
+          # Configura MainActivity com extrator de assets completo
           PACKAGE_PATH="android/app/src/main/java/com/disparador/app"
           mkdir -p "$PACKAGE_PATH"
           cat << 'JAVA' > "$PACKAGE_PATH/MainActivity.java"
@@ -89,14 +88,13 @@ jobs:
                           File filesDir = context.getFilesDir();
                           File nodeDir = new File(filesDir, "nodejs-project");
 
-                          if (!nodeDir.exists()) {
-                              nodeDir.mkdirs();
-                          }
+                          // Extrai arquivos do backend para a memoria do app
+                          copiarAssetsRecursivo(context, "nodejs-project", nodeDir);
 
                           String nodeBinary = context.getApplicationInfo().nativeLibraryDir + "/libnode.so";
                           File serverFile = new File(nodeDir, "server.js");
 
-                          if (new File(nodeBinary).exists()) {
+                          if (new File(nodeBinary).exists() && serverFile.exists()) {
                               ProcessBuilder pb = new ProcessBuilder(nodeBinary, serverFile.getAbsolutePath());
                               pb.directory(nodeDir);
                               pb.environment().put("PORT", "3000");
@@ -108,10 +106,34 @@ jobs:
                       }
                   }).start();
               }
+
+              private void copiarAssetsRecursivo(Context context, String path, File targetDir) {
+                  try {
+                      String[] files = context.getAssets().list(path);
+                      if (files != null && files.length > 0) {
+                          targetDir.mkdirs();
+                          for (String file : files) {
+                              String subPath = path.isEmpty() ? file : path + "/" + file;
+                              copiarAssetsRecursivo(context, subPath, new File(targetDir, file));
+                          }
+                      } else {
+                          InputStream in = context.getAssets().open(path);
+                          OutputStream out = new FileOutputStream(targetDir);
+                          byte[] buffer = new byte[4096];
+                          int read;
+                          while ((read = in.read(buffer)) != -1) {
+                              out.write(buffer, 0, read);
+                          }
+                          in.close();
+                          out.flush();
+                          out.close();
+                      }
+                  } catch (Exception ignored) {}
+              }
           }
           JAVA
 
-          # Permite conexao HTTP local em 127.0.0.1
+          # Permite trafego HTTP local
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
 
       - name: Compilar APK Debug
