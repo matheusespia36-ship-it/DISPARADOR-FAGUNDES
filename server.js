@@ -1,4 +1,5 @@
-process.on("uncaughtException", err => console.error("[ERRO] Exceção capturada:", err));
+
+Process.on("uncaughtException", err => console.error("[ERRO] Exceção capturada:", err));
 process.on("unhandledRejection", reason => console.error("[ERRO] Rejeição capturada:", reason));
 const http = require('node:http');
 const crypto = require('node:crypto');
@@ -9,8 +10,14 @@ const path = require('node:path');
 const QRCode = require('qrcode');
 
 const PORT = Number(process.env.PORT || 3000);
-const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(__dirname, 'data'));
-const PUBLIC_DIR = path.join(__dirname, 'public');
+const ANDROID_SAFE_PATH = process.env.ANDROID_FILES_DIR || __dirname;
+const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ANDROID_SAFE_PATH, 'data'));
+const PUBLIC_DIR = path.resolve(process.env.PUBLIC_DIR || path.join(ANDROID_SAFE_PATH, 'public'));
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
 const MOCK = process.env.MOCK === '1';
 const MAX_BODY = 25 * 1024 * 1024;
 const SLUG_RE = /^[a-z0-9-]{1,60}$/;
@@ -47,7 +54,7 @@ function httpError(status, message) {
 function authorized(req) {
   const raw = req.headers['x-token'] || String(req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   const a = Buffer.from(String(raw));
-  const b = Buffer.from(config.token);
+  const b = Buffer.from(config.token || '');
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 function readBody(req) {
@@ -184,9 +191,10 @@ function startScheduler() {
 
       if (d.schedType === 'fixed' && d.schedValue) {
         const times = d.schedValue.split(',').map(t => t.trim());
-        if (times.includes(currentHM) && d.lastRunHM !== currentHM) {
+        const dayHMKey = `${now.getDate()}-${currentHM}`;
+        if (times.includes(currentHM) && d.lastRunHM !== dayHMKey) {
           shouldRun = true;
-          d.lastRunHM = currentHM;
+          d.lastRunHM = dayHMKey;
         }
       } else if (d.schedType === 'interval' && d.schedValue) {
         const intervalMs = Number(d.schedValue) * 60 * 1000;
@@ -331,7 +339,6 @@ async function route(req, res) {
     const captionText = fillCaption(body.caption || '');
     const payload = mimetype.startsWith('image/') ? { image: buf, mimetype, caption: captionText } : { document: buf, mimetype, fileName: body.fileName || 'ficheiro', caption: captionText };
     
-    // Guardar última imagem/mensagem no disparo para permitir reenvio automático pelo agendador
     const targetDisp = dispatches.find(x => x.slug === slug);
     if (targetDisp) {
       targetDisp.lastMessage = { fileBase64: b64, mimetype, fileName: body.fileName || 'ficheiro' };
@@ -374,3 +381,4 @@ async function main() {
   });
 }
 main();
+
