@@ -1,7 +1,12 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Disparador WhatsApp</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://googleapis.com">
 <style>
 :root{
   --font-ui:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
@@ -40,7 +45,6 @@ h2{font-size:16px;font-weight:700}
 .sm{font-size:12px}
 .muted{color:var(--muted)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-
 #app{height:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg)}
 @media (min-width:520px){
   body{padding-block:16px}
@@ -54,7 +58,6 @@ h2{font-size:16px;font-weight:700}
 .bar h1{flex:1;font-size:22px;letter-spacing:-.3px}
 .iconbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;border-radius:12px}
 .iconbtn.accent{color:var(--accent-text)}
-
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent-text)}
@@ -78,7 +81,6 @@ h2{font-size:16px;font-weight:700}
 .meta svg{flex:none}
 .okt{color:var(--accent-text);font-weight:600}
 .empty{padding:24px 16px;border-radius:18px;border:1px dashed var(--line-strong);text-align:center;color:var(--muted);font-size:14px;line-height:1.5}
-
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 20px;border-radius:16px;border:1.5px solid transparent;font-weight:800;font-size:15px}
 .btn.primary{background:var(--accent);color:var(--accent-ink)}
 .btn.outline{background:none;border-color:var(--accent-text);color:var(--accent-text)}
@@ -88,7 +90,6 @@ h2{font-size:16px;font-weight:700}
 .btn.danger{background:none;border-color:var(--danger);color:var(--danger)}
 .foot .btn{flex:1}
 .foot .btn.primary{flex:1.4}
-
 .field{display:flex;flex-direction:column;gap:8px}
 .field>label,.lbl2{font-size:13px;font-weight:700;color:var(--muted)}
 input[type=text],input[type=time],input[type=search],select{width:100%;height:48px;padding:0 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:15px}
@@ -117,7 +118,6 @@ input[type=file]{font-size:13px;max-width:100%}
 .gitem .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700;font-size:15px}
 .gitem .t small{font-size:12px;font-weight:500;color:var(--muted)}
 .tick{width:24px;height:24px;flex:none;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center}
-
 .hitem{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
 .hic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent-text)}
 .hic.bad{background:var(--danger-soft);color:var(--danger)}
@@ -125,7 +125,6 @@ input[type=file]{font-size:13px;max-width:100%}
 .hitem .t b{font-size:15px}
 .hitem .t span{font-size:12px;color:var(--muted)}
 .hitem .t .bad{color:var(--danger);font-weight:600}
-
 .stat{display:flex;align-items:center;gap:14px;padding:18px;border-radius:20px;background:var(--accent-soft);border:1px solid var(--line-accent)}
 .stat .ic{width:48px;height:48px;flex:none;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center}
 .stat b{display:block;font-size:18px;font-weight:800}
@@ -140,7 +139,6 @@ input[type=file]{font-size:13px;max-width:100%}
 .mini{width:24px;height:24px;flex:none;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:flex;align-items:center;justify-content:center}
 .qr{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:center}
 .qr img{width:min(220px,100%);height:auto;border-radius:10px}
-
 .log-box{
   background:var(--surface);
   border:1px solid var(--line);
@@ -160,356 +158,327 @@ input[type=file]{font-size:13px;max-width:100%}
 .log-msg{color:var(--fg)}
 .log-err{color:var(--danger);font-weight:600}
 .log-ok{color:var(--accent-text)}
-
 #nav{flex:none;display:flex;justify-content:space-around;padding:6px 12px 10px;border-top:1px solid var(--line);background:var(--bg)}
 .tab{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:72px;min-height:48px;padding:4px 8px;background:none;border:0;color:var(--muted);font-size:11px;font-weight:600}
 .tab[aria-current="page"]{color:var(--accent-text);font-weight:700}
 #toast{position:absolute;left:16px;right:16px;bottom:12px;z-index:5;padding:12px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:13px;font-weight:600;text-align:center;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
 #toast.show{opacity:1;transform:none}
 </style>
-
+</head>
+<body>
 <div id="app">
   <div class="stage">
-    <section class="screen" id="s-home" hidden></section>
-    <section class="screen" id="s-hist" hidden></section>
-    <section class="screen" id="s-conn" hidden></section>
-    <section class="screen" id="s-novo" hidden></section>
-    <section class="screen" id="s-grupos" hidden></section>
-    <div id="toast" role="status" aria-live="polite"></div>
+    <div id="s-home" class="screen"></div>
+    <div id="s-hist" class="screen" hidden></div>
+    <div id="s-conn" class="screen" hidden></div>
+    <div id="s-novo" class="screen" hidden></div>
+    <div id="s-grupos" class="screen" hidden></div>
   </div>
-  <nav id="nav" aria-label="Seções do app">
-    <button class="tab" data-act="tab" data-tab="home"></button>
-    <button class="tab" data-act="tab" data-tab="hist"></button>
-    <button class="tab" data-act="tab" data-tab="conn"></button>
-  </nav>
+  <nav id="nav"></nav>
+  <div id="toast"></div>
 </div>
 
 <script>
 (function () {
-  var $ = function (s, r) { return (r || document).querySelector(s); };
-  var esc = function (s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-  };
-  var norm = function (s) { return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
-  var slug = function (s) { return norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
-
-  var BACKEND_URL = 'http://127.0.0.1:3000';
-  var TOKEN = 'k7Qx-92mf-LpT4';
-
-  var state = {
-    screen: 'home',
-    waStatus: 'verificando',
-    qrImage: null,
-    groups: [],
-    dispatches: [],
-    history: [],
-    logs: [],
-    draft: null, editingId: null, errors: {}, confirmDel: false, q: '', tokenShown: false, qr: false, nextId: 1
-  };
-
-  var I = {
-    send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
-    list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
-    wifi: '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
-    back: '<polyline points="15 18 9 12 15 6"/>',
-    chev: '<polyline points="9 18 15 12 9 6"/>',
-    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
-    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
-    users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
-    check: '<polyline points="20 6 9 17 4 12"/>',
-    refresh: '<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
-    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
-    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-    alert: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
-    qr: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14.01" y2="14"/><line x1="21" y1="14" x2="21.01" y2="21"/><line x1="14" y1="21" x2="14.01" y2="21"/><line x1="21" y1="21" x2="21.01" y2="21"/><line x1="17.5" y1="17.5" x2="17.51" y2="17.5"/>'
-  };
-  var ic = function (n, s, sw) {
-    return '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + I[n] + '</svg>';
-  };
-
-  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
-  var timeNow = function () { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); };
-
-  function addLog(msg, type) {
-    state.logs.unshift({ time: timeNow(), msg: msg, type: type || 'normal' });
-    if (state.logs.length > 50) state.logs.pop();
-    if (state.screen === 'conn') renderConn();
-  }
-
-  // Função central autenticada para requisições ao backend
-  async function api(path, options) {
-    options = options || {};
-    options.headers = options.headers || {};
-    options.headers['x-token'] = TOKEN;
-    options.headers['Content-Type'] = 'application/json';
-    try {
-      var res = await fetch(BACKEND_URL + path, options);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return await res.json();
-    } catch (e) {
-      addLog('Erro API (' + path + '): ' + e.message, 'err');
-      throw e;
-    }
-  }
-
-  // Sincronização real com o Backend Node.js
-  async function pollBackendData() {
-    try {
-      var data = await api('/status');
-      state.waStatus = data.whatsapp || 'conectado';
-      state.qrImage = data.qr || null;
-      if (data.groups) state.groups = data.groups;
-      if (data.dispatches) {
-        state.dispatches = data.dispatches.map(function(d) {
-          return {
-            id: d.id || slug(d.name),
-            name: d.name,
-            group: d.groupName || d.group,
-            mode: d.schedType === 'interval' ? 'interval' : 'times',
-            times: d.schedType === 'times' ? (Array.isArray(d.schedValue) ? d.schedValue : [d.schedValue]) : [],
-            interval: d.schedType === 'interval' ? Number(d.schedValue) || 120 : 120,
-            source: 'excel',
-            caption: d.caption || '',
-            active: d.active !== false,
-            last: d.lastRun || ''
-          };
-        });
-      }
-      addLog('GET /status 200 OK - Sincronizado', 'ok');
-    } catch (e) {
-      state.waStatus = 'offline';
-      addLog('Falha ao comunicar com o backend local', 'err');
-    }
-    if (['conn', 'home'].indexOf(state.screen) !== -1) RENDER[state.screen]();
-  }
-  setInterval(pollBackendData, 4000);
-  pollBackendData();
-
-  var INTERVALS = [[15, '15 minutos'], [30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [240, '4 horas'], [360, '6 horas']];
-  var intervalText = function (m) { var f = INTERVALS.filter(function (x) { return x[0] === m; })[0]; return f ? f[1] : m + ' minutos'; };
-  var joinList = function (a) { return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; };
-  var schedText = function (d) {
-    if (d.mode === 'interval') return 'A cada ' + intervalText(d.interval);
-    return d.times.length ? 'Todo dia às ' + joinList(d.times) : 'Sem horários';
-  };
-
-  function toast(msg) {
-    var t = $('#toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(function () { t.classList.remove('show'); }, 2600);
-  }
-
-  function copyText(text) {
-    navigator.clipboard.writeText(text).then(function () { toast('Copiado'); });
-  }
-
-  function renderNav() {
-    var tabs = [['home', 'send', 'Disparos'], ['hist', 'list', 'Histórico'], ['conn', 'wifi', 'Conexão']];
-    document.querySelectorAll('.tab').forEach(function (b, i) {
-      b.innerHTML = ic(tabs[i][1], 22) + tabs[i][2];
-      b.setAttribute('aria-current', state.screen === tabs[i][0] ? 'page' : 'false');
-    });
-  }
-
-  function card(d) {
-    var last = !d.active ? 'Pausado' : (d.last ? ic('check', 16, 2.5) + 'Enviado ' + d.last : 'Ainda não enviado');
-    return '<article class="card' + (d.active ? '' : ' off') + '">' +
-      '<div class="card-top"><button class="card-title" data-act="edit" data-id="' + d.id + '">' + esc(d.name) + '</button>' +
-      '<button class="sw" data-act="toggle" data-id="' + d.id + '" aria-pressed="' + d.active + '"><span class="track"><span class="knob"></span></span></button></div>' +
-      '<div class="meta">' + ic('users', 16) + esc(d.group) + '</div>' +
-      '<div class="meta">' + ic('clock', 16) + esc(schedText(d)) + ' · Excel</div>' +
-      '<div class="meta' + (d.active && d.last ? ' okt' : '') + '">' + last + '</div></article>';
-  }
-
-  function renderHome() {
-    var act = state.dispatches.filter(function (d) { return d.active; }).length;
-    var waText = state.waStatus === 'open' ? 'WhatsApp conectado' : 'WhatsApp aguardando QR';
-    $('#s-home').innerHTML =
-      '<div class="body">' +
-      '<header class="top"><h1>Disparos</h1><span class="pill"><i class="dot"></i>' + waText + '</span></header>' +
-      '<p class="proto">Backend Node.js nativo ativo na porta 3000.</p>' +
-      '<div class="sect"><h2>Meus disparos</h2><span class="muted sm">' + act + ' ativos de ' + state.dispatches.length + '</span></div>' +
-      '<div class="cards">' + (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo configurado no servidor.</div>') + '</div>' +
-      '</div>' +
-      '<div class="foot"><button class="btn primary" data-act="new">' + ic('plus', 20, 2.5) + 'Novo disparo</button></div>';
-  }
-
-  function renderHist() {
-    $('#s-hist').innerHTML =
-      '<div class="body"><h1>Histórico</h1>' +
-      '<div class="cards">' + (state.history.length ? state.history.map(function (h) {
-        return '<div class="hitem"><span class="hic' + (h.ok ? '' : ' bad') + '">' + ic(h.ok ? 'check' : 'alert', 16, 2.5) + '</span>' +
-          '<div class="t"><b>' + esc(h.name) + '</b><span>' + esc(h.group) + ' · ' + esc(h.when) + '</span>' +
-          (h.ok ? '<span>Entregue</span>' : '<span class="bad">Falhou: ' + esc(h.err) + '</span>') + '</div></div>';
-      }).join('') : '<div class="empty">Nenhum envio recente registrado.</div>') + '</div></div>';
-  }
-
-  function renderConn() {
-    var tok = state.tokenShown ? TOKEN : '••••-•••-••••';
-    var ipPort = '127.0.0.1:3000';
-    var waStatusBadge = state.waStatus === 'open' ? 'Conectado e Operacional' : 'Necessita leitura de QR Code';
-    $('#s-conn').innerHTML =
-      '<div class="body"><h1>Conexão</h1>' +
-      '<div class="stat"><span class="ic">' + ic('wifi', 24, 2.5) + '</span><div><b>Status: ' + waStatusBadge + '</b><span>Motor Baileys rodando localmente no APK</span></div></div>' +
-      '<div class="box"><div class="lbl2">Endereço local interno</div>' +
-      '<div class="kv"><span class="mono">' + ipPort + '</span><button class="btn primary small" data-act="copy" data-text="' + ipPort + '">Copiar</button></div></div>' +
-      '<div class="box"><div class="lbl2">Senha de Token de Acesso</div>' +
-      '<div class="kv"><span class="mono">' + tok + '</span><span class="row"><button class="btn ghost small" data-act="tok">' + (state.tokenShown ? 'Ocultar' : 'Mostrar') + '</button><button class="btn primary small" data-act="copy" data-text="' + TOKEN + '">Copiar</button></span></div></div>' +
-      '<div class="box"><div class="lbl2">Registrador de Logs / Requisições Reais</div>' +
-      '<div class="log-box">' +
-      (state.logs.length ? state.logs.map(function(l) {
-        var cls = l.type === 'ok' ? 'log-ok' : (l.type === 'err' ? 'log-err' : 'log-msg');
-        return '<div class="log-entry"><span class="log-time">' + l.time + '</span><span class="' + cls + '">' + esc(l.msg) + '</span></div>';
-      }).join('') : '<div class="log-entry"><span class="log-msg">Aguardando requisições...</span></div>') +
-      '</div></div>' +
-      '<div class="box"><div class="lbl2">Pareamento WhatsApp</div>' +
-      '<button class="btn ghost block" data-act="logout"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Desconectar e Ler Novo QR Code</button>' +
-      (state.qr ? '<div class="qr">' + (state.qrImage ? '<img src="' + state.qrImage + '" alt="QR Code"/>' : '<p class="help">A carregar QR Code do servidor...</p>') + '</div>' : '') +
-      '</div></div>';
-  }
-
-  function renderNovo() {
-    var d = state.draft, e = state.errors, edit = state.editingId !== null;
-    var when = d.mode === 'times'
-      ? '<div class="chips">' + d.times.map(function (t) {
-          return '<span class="chip">' + t + '<button data-act="delTime" data-t="' + t + '">' + ic('x', 14, 2.5) + '</button></span>';
-        }).join('') + '</div>' +
-        '<div class="row"><input type="time" id="newTime" data-field="newTime" value="' + esc(d.newTime) + '"><button class="btn outline small" data-act="addTime">Adicionar</button></div>' +
-        (e.times ? '<p class="err">' + e.times + '</p>' : '')
-      : '<select id="interval" data-field="interval">' + INTERVALS.map(function (x) {
-          return '<option value="' + x[0] + '"' + (d.interval === x[0] ? ' selected' : '') + '>A cada ' + x[1] + '</option>';
-        }).join('') + '</select>';
-    var url = BACKEND_URL + '/send/' + (slug(d.name) || 'novo-disparo');
-    $('#s-novo').innerHTML =
-      '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>' + (edit ? 'Editar disparo' : 'Novo disparo') + '</h1></div>' +
-      '<div class="body">' +
-      '<div class="field"><label>Nome do disparo</label><input type="text" data-field="name" value="' + esc(d.name) + '" placeholder="Ex.: Relatório"></div>' +
-      '<div class="field"><span class="lbl2">Endpoint Gerado</span>' +
-      '<div class="epbox"><span class="mono">' + esc(url) + '</span><button class="btn primary small" data-act="copy" data-text="' + esc(url) + '">Copiar</button></div></div>' +
-      '<div class="field"><span class="lbl2">Enviar para o grupo</span>' +
-      '<button class="picker" data-act="pickGroup"><span class="l">' + (d.group ? esc(d.group) : 'Escolher grupo') + '</span>' + ic('chev', 20) + '</button></div>' +
-      '<div class="field"><span class="lbl2">Quando enviar</span>' +
-      '<div class="seg"><button data-act="mode" data-v="times" aria-pressed="' + (d.mode === 'times') + '">Horários</button><button data-act="mode" data-v="interval" aria-pressed="' + (d.mode === 'interval') + '">Intervalo</button></div>' + when + '</div>' +
-      '</div>' +
-      '<div class="foot"><button class="btn outline" data-act="test">Testar</button><button class="btn primary" data-act="save">Salvar</button></div>';
-  }
-
-  function renderGrupos() {
-    $('#s-grupos').innerHTML =
-      '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>Escolher grupo</h1></div>' +
-      '<div class="body"><div class="glist">' + (state.groups.length ? state.groups.map(function(g){
-        return '<button class="gitem" data-act="setGroup" data-name="' + esc(g.name) + '"><span class="t">' + esc(g.name) + '<small>' + (g.participants || 0) + ' membros</small></span></button>';
-      }).join('') : '<div class="empty">Nenhum grupo sincronizado ainda pelo Baileys.</div>') + '</div></div>';
-  }
-
-  var RENDER = { home: renderHome, hist: renderHist, conn: renderConn, novo: renderNovo, grupos: renderGrupos };
-
-  function show(name) {
-    state.screen = name;
-    document.querySelectorAll('.screen').forEach(function (s) { s.hidden = s.id !== 's-' + name; });
-    $('#nav').hidden = ['home', 'hist', 'conn'].indexOf(name) === -1;
-    RENDER[name]();
-    renderNav();
-  }
-
-  var A = {
-    tab: function (t) { show(t.dataset.tab); },
-    new: function () {
-      state.draft = { name: '', group: '', mode: 'times', times: [], interval: 120, source: 'excel', caption: '', newTime: '', active: true };
-      state.editingId = null;
-      show('novo');
-    },
-    back: function () { show(state.screen === 'grupos' ? 'novo' : 'home'); },
-    pickGroup: function () { show('grupos'); },
-    setGroup: function (t) { state.draft.group = t.dataset.name; show('novo'); },
-    mode: function (t) { state.draft.mode = t.dataset.v; renderNovo(); },
-    addTime: function () {
-      var v = state.draft.newTime;
-      if (v && state.draft.times.indexOf(v) === -1) { state.draft.times.push(v); state.draft.times.sort(); state.draft.newTime = ''; renderNovo(); }
-    },
-    delTime: function (t) { state.draft.times = state.draft.times.filter(function (x) { return x !== t.dataset.t; }); renderNovo(); },
-    save: async function () {
-      var d = state.draft;
-      var payload = {
-        name: d.name,
-        groupName: d.group,
-        schedType: d.mode === 'interval' ? 'interval' : 'times',
-        schedValue: d.mode === 'interval' ? d.interval : d.times,
-        caption: d.caption,
-        active: d.active
-      };
-      try {
-        await api('/dispatches/' + (slug(d.name) || 'novo'), { method: 'PUT', body: JSON.stringify(payload) });
-        addLog('Disparo salvo no backend: ' + d.name, 'ok');
-        toast('Salvo com sucesso no servidor');
-        pollBackendData();
-        show('home');
-      } catch (e) {
-        toast('Erro ao salvar no servidor');
-      }
-    },
-    toggle: async function (t) {
-      var id = t.dataset.id;
-      var d = state.dispatches.filter(function (x) { return x.id == id; })[0];
-      if (!d) return;
-      d.active = !d.active;
-      var payload = {
-        name: d.name,
-        groupName: d.group,
-        schedType: d.mode,
-        schedValue: d.mode === 'interval' ? d.interval : d.times,
-        active: d.active
-      };
-      try {
-        await api('/dispatches/' + slug(d.name), { method: 'PUT', body: JSON.stringify(payload) });
-        addLog('Status alterado para: ' + (d.active ? 'Ativo' : 'Pausado'), 'ok');
-        renderHome();
-      } catch (e) {
-        toast('Erro ao atualizar status');
-      }
-    },
-    test: async function () {
-      try {
-        addLog('POST /test - Enviando teste manual...', 'normal');
-        var res = await api('/test', { method: 'POST' });
-        toast('Teste acionado com sucesso!');
-        addLog('POST /test 200 OK', 'ok');
-      } catch (e) {
-        toast('Falha na rota de teste.');
-      }
-    },
-    copy: function (t) { copyText(t.dataset.text); },
-    tok: function () { state.tokenShown = !state.tokenShown; renderConn(); },
-    logout: async function () {
-      if (!confirm('Tem certeza que deseja desconectar o WhatsApp atual?')) return;
-      try {
-        await api('/reset-session', { method: 'POST' });
-        toast('Desconectado! Aguarde a geração do novo QR Code...');
-        state.qr = true;
-        state.waStatus = 'aguardando';
-        renderConn();
-      } catch (e) {
-        toast('Erro ao tentar desconectar.');
-      }
-    },
-    qr: function () { state.qr = !state.qr; renderConn(); }
-  };
-
-  document.addEventListener('click', function (ev) {
-    var t = ev.target.closest('[data-act]');
-    if (t && A[t.dataset.act]) A[t.dataset.act](t);
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var esc = function (s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
   });
+};
+var norm = function (s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+var slug = function (s) { return norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
 
-  document.addEventListener('input', function (ev) {
-    var f = ev.target.dataset && ev.target.dataset.field;
-    if (f && state.draft) state.draft[f] = ev.target.value;
+var BACKEND_URL = 'http://localhost:3000';
+var TOKEN = window.ANDROID_TOKEN || 'k7Qx-92mf-LpT4';
+
+var state = {
+  screen: 'home',
+  waStatus: 'verificando',
+  qrImage: null,
+  groups: [],
+  dispatches: [],
+  history: [],
+  logs: [],
+  draft: null, editingId: null, errors: {}, confirmDel: false, q: '', tokenShown: false, qr: false, nextId: 1
+};
+
+var I = {
+  send: '', list: '', wifi: '', back: '', chev: '', plus: '', clock: '', users: '', file: '', check: '', refresh: '', copy: '', x: '', alert: '', qr: ''
+};
+var ic = function (n, s, sw) {
+  return '<span class="mini">' + (I[n] || '') + '</span>';
+};
+
+var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+var timeNow = function () { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); };
+
+function addLog(msg, type) {
+  state.logs.unshift({ time: timeNow(), msg: msg, type: type || 'normal' });
+  if (state.logs.length > 50) state.logs.pop();
+  if (state.screen === 'conn') renderConn();
+}
+
+async function api(path, options) {
+  options = options || {};
+  options.headers = options.headers || {};
+  options.headers['x-token'] = TOKEN;
+  options.headers['Content-Type'] = 'application/json';
+  try {
+    var res = await fetch(BACKEND_URL + path, options);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } catch (e) {
+    addLog('Erro API (' + path + '): ' + e.message, 'err');
+    throw e;
+  }
+}
+
+async function pollBackendData() {
+  try {
+    var data = await api('/status');
+    state.waStatus = data.whatsapp || 'conectado';
+    state.qrImage = data.qr || null;
+    if (data.groups) state.groups = data.groups;
+    if (data.dispatches) {
+      state.dispatches = data.dispatches.map(function(d) {
+        return {
+          id: d.id || slug(d.name),
+          name: d.name,
+          group: d.groupName || d.group,
+          mode: d.schedType === 'interval' ? 'interval' : 'times',
+          times: d.schedType === 'times' ? (Array.isArray(d.schedValue) ? d.schedValue : [d.schedValue]) : [],
+          interval: d.schedType === 'interval' ? Number(d.schedValue) || 120 : 120,
+          source: 'excel',
+          caption: d.caption || '',
+          active: d.active !== false,
+          last: d.lastRun || ''
+        };
+      });
+    }
+    addLog('GET /status 200 OK - Sincronizado', 'ok');
+  } catch (e) {
+    state.waStatus = 'offline';
+    addLog('Falha ao comunicar com o backend local', 'err');
+  }
+  if (['conn', 'home'].indexOf(state.screen) !== -1) RENDER[state.screen]();
+}
+setInterval(pollBackendData, 4000);
+pollBackendData();
+
+var INTERVALS = [[15, '15 minutos'], [30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [240, '4 horas'], [360, '6 horas']];
+var intervalText = function (m) { var f = INTERVALS.filter(function (x) { return x[0] === m; })[0]; return f ? f[1] : m + ' minutos'; };
+var joinList = function (a) { return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; };
+var schedText = function (d) {
+  if (d.mode === 'interval') return 'A cada ' + intervalText(d.interval);
+  return d.times.length ? 'Todo dia às ' + joinList(d.times) : 'Sem horários';
+};
+
+function toast(msg) {
+  var t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function () { t.classList.remove('show'); }, 2600);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(function () { toast('Copiado'); });
+}
+
+function renderNav() {
+  var tabs = [['home', 'send', 'Disparos'], ['hist', 'list', 'Histórico'], ['conn', 'wifi', 'Conexão']];
+  document.querySelectorAll('.tab').forEach(function (b, i) {
+    b.innerHTML = ic(tabs[i][1], 22) + tabs[i][2];
+    b.setAttribute('aria-current', state.screen === tabs[i][0] ? 'page' : 'false');
   });
+}
 
-  show('home');
+function card(d) {
+  var last = !d.active ? 'Pausado' : (d.last ? ic('check', 16, 2.5) + 'Enviado ' + d.last : 'Ainda não enviado');
+  return '<div class="card' + (!d.active ? ' off' : '') + '">' +
+    '<div class="card-top"><button class="card-title" data-act="edit" data-id="' + d.id + '">' + esc(d.name) + '</button>' +
+    '<button class="sw" aria-pressed="' + (d.active ? 'true' : 'false') + '" data-act="toggle" data-id="' + d.id + '"><span class="track"><span class="knob"></span></span></button></div>' +
+    '<div class="meta">' + ic('users', 16) + esc(d.group) + '</div>' +
+    '<div class="meta">' + ic('clock', 16) + esc(schedText(d)) + ' · Excel</div>' +
+    '<div class="meta okt">' + last + '</div></div>';
+}
+
+function renderHome() {
+  var act = state.dispatches.filter(function (d) { return d.active; }).length;
+  var waText = state.waStatus === 'open' ? 'WhatsApp conectado' : 'WhatsApp aguardando QR';
+  $('#s-home').innerHTML = '<div class="screen">' +
+    '<div class="bar"><h1>Disparor</h1><span class="pill"><span class="dot"></span>' + waText + '</span></div>' +
+    '<div class="body"><p class="proto">Backend Node.js nativo ativo na porta 3000.</p>' +
+    '<div class="sect"><h2>Meus disparos</h2><span class="muted">' + act + ' ativos de ' + state.dispatches.length + '</span></div>' +
+    '<div class="cards">' + (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo configurado no servidor.</div>') + '</div></div>' +
+    '<div class="foot"><button class="btn primary block" data-act="new">' + ic('plus', 20, 2.5) + 'Novo disparo</button></div></div>';
+}
+
+function renderHist() {
+  $('#s-hist').innerHTML = '<div class="screen">' +
+    '<div class="bar"><h1>Histórico</h1></div>' +
+    '<div class="body"><div class="cards">' + (state.history.length ? state.history.map(function (h) {
+      return '<div class="hitem"><div class="hic' + (h.ok ? '' : ' bad') + '">' + ic(h.ok ? 'check' : 'alert', 16, 2.5) + '</div>' +
+        '<div class="t"><b>' + esc(h.name) + '</b><span>' + esc(h.group) + ' · ' + esc(h.when) + '</span>' +
+        (h.ok ? '<span class="okt">Entregue</span>' : '<span class="bad">Falhou: ' + esc(h.err) + '</span>') + '</div></div>';
+    }).join('') : '<div class="empty">Nenhum envio recente registrado.</div>') + '</div></div></div>';
+}
+
+function renderConn() {
+  var tok = state.tokenShown ? TOKEN : '••••-•••-••••';
+  var ipPort = 'localhost:3000';
+  var waStatusBadge = state.waStatus === 'open' ? 'Conectado e Operacional' : 'Necessita leitura de QR Code';
+  $('#s-conn').innerHTML = '<div class="screen">' +
+    '<div class="bar"><h1>Conexão</h1></div>' +
+    '<div class="body"><div class="stat"><div class="ic">' + ic('wifi', 24, 2.5) + '</div><div><b>Status: ' + waStatusBadge + '</b><span>Motor Baileys rodando localmente no APK</span></div></div>' +
+    '<div class="field"><label>Endereço local interno</label><div class="row"><input type="text" value="' + ipPort + '" readonly class="mono"><button class="btn ghost small" data-act="copy" data-text="' + ipPort + '">Copiar</button></div></div>' +
+    '<div class="field"><label>Senha de Token de Acesso</label><div class="row"><input type="text" value="' + tok + '" readonly class="mono"><button class="btn ghost small" data-act="tok">' + (state.tokenShown ? 'Ocultar' : 'Mostrar') + '</button><button class="btn ghost small" data-act="copy" data-text="' + TOKEN + '">Copiar</button></div></div>' +
+    '<div class="field"><label>Registrador de Logs / Requisições Reais</label><div class="log-box">' +
+    (state.logs.length ? state.logs.map(function(l) {
+      var cls = l.type === 'ok' ? 'log-ok' : (l.type === 'err' ? 'log-err' : 'log-msg');
+      return '<div class="log-entry"><span class="log-time">[' + l.time + ']</span><span class="' + cls + '">' + esc(l.msg) + '</span></div>';
+    }).join('') : '<div class="muted">Aguardando requisições...</div>') +
+    '</div></div>' +
+    '<div class="field"><label>Pareamento WhatsApp</label><button class="btn danger block" data-act="logout">Desconectar e Ler Novo QR Code</button></div>' +
+    (state.qr ? '<div class="qr"><button class="btn ghost small" data-act="qr">Esconder QR Code</button>' + (state.qrImage ? '<img src="' + state.qrImage + '" alt="QR Code WhatsApp">' : '<span class="muted">A carregar QR Code do servidor...</span>') + '</div>' : '') +
+    '</div></div>';
+}
+
+function renderNovo() {
+  var d = state.draft, e = state.errors, edit = state.editingId !== null;
+  var when = d.mode === 'times'
+    ? '<div class="chips">' + d.times.map(function (t) {
+        return '<span class="chip">' + t + '<button data-act="delTime" data-t="' + t + '">' + ic('x', 14, 2.5) + '</button></span>';
+      }).join('') + '</div>' +
+      '<div class="row"><input type="time" data-field="newTime" value="' + (d.newTime || '') + '"><button class="btn outline small" data-act="addTime">Adicionar</button></div>' +
+      (e.times ? '<span class="err">' + e.times + '</span>' : '')
+    : '<select data-field="interval">' + INTERVALS.map(function (x) {
+        return '<option value="' + x[0] + '"' + (d.interval === x[0] ? ' selected' : '') + '>A cada ' + x[1] + '</option>';
+      }).join('') + '</select>';
+  var url = BACKEND_URL + '/send/' + (slug(d.name) || 'novo-disparo');
+  $('#s-novo').innerHTML = '<div class="screen">' +
+    '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>' + (edit ? 'Editar disparo' : 'Novo disparo') + '</h1></div>' +
+    '<div class="body"><div class="field"><label>Nome do disparo</label><input type="text" data-field="name" value="' + esc(d.name || '') + '" placeholder="Ex: Promoção Dia das Mães"></div>' +
+    '<div class="field"><label>Endpoint Gerado</label><div class="epbox"><span class="mono">' + esc(url) + '</span><button class="btn ghost small" data-act="copy" data-text="' + url + '">Copiar</button></div></div>' +
+    '<div class="field"><label>Enviar para o grupo</label><button class="picker" data-act="pickGroup"><span class="l"><span class="avatar">' + (d.group ? d.group[0].toUpperCase() : '#') + '</span><span>' + (d.group ? esc(d.group) : 'Escolher grupo') + '</span></span>' + ic('chev', 20) + '</button></div>' +
+    '<div class="field"><label>Quando enviar</label><div class="seg"><button data-act="mode" data-v="times" aria-pressed="' + (d.mode === 'times' ? 'true' : 'false') + '">Horários</button><button data-act="mode" data-v="interval" aria-pressed="' + (d.mode === 'interval' ? 'true' : 'false') + '">Intervalo</button></div>' + when + '</div>' +
+    '</div><div class="foot"><button class="btn ghost" data-act="test">Testar</button><button class="btn primary" data-act="save">Salvar</button></div></div>';
+}
+
+function renderGrupos() {
+  $('#s-grupos').innerHTML = '<div class="screen">' +
+    '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>Escolher grupo</h1></div>' +
+    '<div class="body"><div class="glist">' + (state.groups.length ? state.groups.map(function(g){
+      return '<button class="gitem" data-act="setGroup" data-name="' + esc(g.name) + '"><span class="avatar">' + g.name[0].toUpperCase() + '</span><span class="t"><b>' + esc(g.name) + '</b><small>' + (g.participants || 0) + ' membros</small></span></button>';
+    }).join('') : '<div class="empty">Nenhum grupo sincronizado ainda pelo Baileys.</div>') + '</div></div></div>';
+}
+
+var RENDER = { home: renderHome, hist: renderHist, conn: renderConn, novo: renderNovo, grupos: renderGrupos };
+
+function show(name) {
+  state.screen = name;
+  document.querySelectorAll('.screen').forEach(function (s) { s.hidden = s.id !== 's-' + name; });
+  $('#nav').hidden = ['home', 'hist', 'conn'].indexOf(name) === -1;
+  RENDER[name]();
+  renderNav();
+}
+
+var A = {
+  tab: function (t) { show(t.dataset.tab); },
+  new: function () {
+    state.draft = { name: '', group: '', mode: 'times', times: [], interval: 120, source: 'excel', caption: '', newTime: '', active: true };
+    state.editingId = null;
+    show('novo');
+  },
+  back: function () { show(state.screen === 'grupos' ? 'novo' : 'home'); },
+  pickGroup: function () { show('grupos'); },
+  setGroup: function (t) { state.draft.group = t.dataset.name; show('novo'); },
+  mode: function (t) { state.draft.mode = t.dataset.v; renderNovo(); },
+  addTime: function () {
+    var v = state.draft.newTime;
+    if (v && state.draft.times.indexOf(v) === -1) { state.draft.times.push(v); state.draft.times.sort(); state.draft.newTime = ''; renderNovo(); }
+  },
+  delTime: function (t) { state.draft.times = state.draft.times.filter(function (x) { return x !== t.dataset.t; }); renderNovo(); },
+  save: async function () {
+    var d = state.draft;
+    var payload = {
+      name: d.name,
+      groupName: d.group,
+      schedType: d.mode === 'interval' ? 'interval' : 'times',
+      schedValue: d.mode === 'interval' ? d.interval : d.times,
+      caption: d.caption,
+      active: d.active
+    };
+    try {
+      await api('/send/' + (slug(d.name) || 'novo'), { method: 'POST', body: JSON.stringify(payload) });
+      addLog('Disparo salvo com sucesso: ' + d.name, 'ok');
+      toast('Salvo com sucesso no servidor');
+      pollBackendData();
+      show('home');
+    } catch (e) {
+      toast('Erro ao salvar no servidor');
+    }
+  },
+  toggle: async function (t) {
+    var id = t.dataset.id;
+    var d = state.dispatches.filter(function (x) { return x.id == id; })[0];
+    if (!d) return;
+    d.active = !d.active;
+    var payload = {
+      name: d.name,
+      groupName: d.group,
+      schedType: d.mode,
+      schedValue: d.mode === 'interval' ? d.interval : d.times,
+      active: d.active
+    };
+    try {
+      await api('/send/' + slug(d.name), { method: 'POST', body: JSON.stringify(payload) });
+      addLog('Status alterado para: ' + (d.active ? 'Ativo' : 'Pausado'), 'ok');
+      renderHome();
+    } catch (e) {
+      toast('Erro ao atualizar status');
+    }
+  },
+  test: async function () {
+    try {
+      addLog('POST /test - Enviando teste manual...', 'normal');
+      var res = await api('/test', { method: 'POST' });
+      toast('Teste acionado com sucesso!');
+      addLog('POST /test 200 OK', 'ok');
+    } catch (e) {
+      toast('Falha na rota de teste.');
+    }
+  },
+  copy: function (t) { copyText(t.dataset.text); },
+  tok: function () { state.tokenShown = !state.tokenShown; renderConn(); },
+  logout: async function () {
+    if (!confirm('Tem certeza que deseja desconectar o WhatsApp atual?')) return;
+    try {
+      await api('/reset-session', { method: 'POST' });
+      toast('Desconectado! Aguarde a geração do novo QR Code...');
+      state.qr = true;
+      state.waStatus = 'aguardando';
+      renderConn();
+    } catch (e) {
+      toast('Erro ao tentar desconectar.');
+    }
+  },
+  qr: function () { state.qr = !state.qr; renderConn(); }
+};
+
+document.addEventListener('click', function (ev) {
+  var t = ev.target.closest('[data-act]');
+  if (t && A[t.dataset.act]) A[t.dataset.act](t);
+});
+
+document.addEventListener('input', function (ev) {
+  var f = ev.target.dataset && ev.target.dataset.field;
+  if (f && state.draft) state.draft[f] = ev.target.value;
+});
+
+show('home');
 })();
 </script>
-</body></html>
+</body>
+</html>
+
