@@ -9,25 +9,26 @@
     .card { background: #1e293b; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #334155; }
     .status-ok { color: #4ade80; font-weight: bold; }
     .status-err { color: #f87171; font-weight: bold; }
-    #debug-log { background: #000; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 200px; overflow-y: auto; color: #38bdf8; }
+    #debug-log { background: #000; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 220px; overflow-y: auto; color: #38bdf8; }
     button { background: #2563eb; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; width: 100%; margin-top: 8px; }
   </style>
 </head>
 <body>
 
-  <h2>Disparador WhatsApp</h2>
+  <h2>Disparador WhatsApp (Autônomo)</h2>
 
   <div class="card">
-    <div>Status do Servidor: <span id="server-status">Testando...</span></div>
-    <div>WhatsApp: <span id="wa-status">Testando...</span></div>
+    <div>Servidor Embutido: <span id="server-status">Iniciando...</span></div>
+    <div>WhatsApp: <span id="wa-status">Aguardando...</span></div>
   </div>
 
   <div class="card">
-    <strong>Painel de Diagnóstico (Testes de Conexão)</strong>
-    <pre id="debug-log">Iniciando testes no app...</pre>
-    <button onclick="executarTestes()">Refazer Teste de Conexão</button>
+    <strong>Console de Inicialização</strong>
+    <pre id="debug-log">Inicializando app autônomo...</pre>
+    <button onclick="executarTestes()">Testar Conexão Novamente</button>
   </div>
 
+  <script src="capacitor.js"></script>
   <script>
     const LOG = document.getElementById('debug-log');
     function log(msg) {
@@ -35,54 +36,68 @@
       LOG.scrollTop = LOG.scrollHeight;
     }
 
+    async function iniciarNodeJS() {
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.CapacitorNodeJS) {
+        log('Iniciando motor Node.js interno no APK...');
+        try {
+          await window.Capacitor.Plugins.CapacitorNodeJS.start();
+          log('-> Motor Node.js iniciado com sucesso!');
+        } catch (e) {
+          log('-> Aviso ao iniciar Node.js: ' + e.message);
+        }
+      } else {
+        log('Modo WebView / Termux detectado (CapacitorNodeJS ausente)');
+      }
+    }
+
     async function testarEndpoint(url) {
-      log('Tentando conectar em: ' + url);
+      log('Conectando em: ' + url);
       try {
         const res = await fetch(url, {
           method: 'GET',
           headers: { 'x-token': 'minhasenha' }
         });
-        log('-> Resposta HTTP Status: ' + res.status);
+        log('-> Status HTTP: ' + res.status);
         if (res.ok) {
           const data = await res.json();
-          log('-> Sucesso! Resposta: ' + JSON.stringify(data));
+          log('-> Resposta: ' + JSON.stringify(data));
           return data;
         }
       } catch (err) {
-        log('-> ERRO DE REDE: ' + err.message);
+        log('-> Falha: ' + err.message);
       }
       return null;
     }
 
     async function executarTestes() {
-      LOG.textContent = 'Iniciando diagnóstico...';
-      
-      // Teste 1: 127.0.0.1
-      let res = await testarEndpoint('http://127.0.0.1:3000/status');
-      
-      // Teste 2: localhost
-      if (!res) {
-        log('Tentando via localhost...');
-        res = await testarEndpoint('http://localhost:3000/status');
-      }
-
       const elServer = document.getElementById('server-status');
       const elWa = document.getElementById('wa-status');
 
-      if (res && res.ok) {
-        elServer.className = 'status-ok';
-        elServer.textContent = 'ONLINE (Porta 3000)';
-        elWa.className = 'status-ok';
-        elWa.textContent = res.whatsapp || 'Desconhecido';
-      } else {
-        elServer.className = 'status-err';
-        elServer.textContent = 'FALHA DE CONEXÃO';
-        elWa.className = 'status-err';
-        elWa.textContent = 'INDISPONÍVEL';
+      // Tenta até 5 vezes aguardando o Node.js interno subir a porta 3000
+      for (let i = 1; i <= 5; i++) {
+        log(`Tentativa ${i}/5 de conexão com o servidor interno...`);
+        let res = await testarEndpoint('http://127.0.0.1:3000/status');
+        
+        if (res && res.ok) {
+          elServer.className = 'status-ok';
+          elServer.textContent = 'ONLINE (Embutido)';
+          elWa.className = 'status-ok';
+          elWa.textContent = res.whatsapp || 'Conectado';
+          return;
+        }
+        await new Promise(r => setTimeout(r, 2000));
       }
+
+      elServer.className = 'status-err';
+      elServer.textContent = 'ERRO AO INICIAR';
+      elWa.className = 'status-err';
+      elWa.textContent = 'INDISPONÍVEL';
     }
 
-    window.onload = executarTestes;
+    window.onload = async () => {
+      await iniciarNodeJS();
+      setTimeout(executarTestes, 1500);
+    };
   </script>
 </body>
 </html>

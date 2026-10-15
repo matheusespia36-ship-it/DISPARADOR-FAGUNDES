@@ -1,4 +1,4 @@
-name: Compilar APK Android
+name: Compilar APK Android Autônomo
 
 on:
   push:
@@ -17,16 +17,24 @@ jobs:
         with:
           node-version: 20
 
-      - name: Instalar Dependências e Capacitor
+      - name: Instalar Dependências Gerais e Módulos Embutidos
         run: |
           npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install capacitor-nodejs @capacitor/core @capacitor/cli @capacitor/android
+          
+          # Instala as dependências dentro da pasta nodejs embutida
+          cd public/nodejs
+          npm install --production
+          cd ../..
+
           mkdir -p www
           cp public/index.html www/index.html
+          cp -r public/nodejs www/nodejs
+          
           npx @capacitor/cli add android || true
           npx @capacitor/cli sync android
           
-          # Garante permissão de tráfego HTTP local no AndroidManifest
+          # Garante permissões de rede no AndroidManifest
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml || true
 
       - name: Corrigir conflito de duplicidade Kotlin
@@ -57,5 +65,5 @@ jobs:
       - name: Disponibilizar APK para Download
         uses: actions/upload-artifact@v4
         with:
-          name: Disparador-WhatsApp
+          name: Disparador-WhatsApp-Autonomo
           path: android/app/build/outputs/apk/debug/app-debug.apk
