@@ -20,12 +20,12 @@ jobs:
 
       - name: Instalar Dependências e Módulos
         run: |
-          npm install --no-audit --no-fund
-          npm install capacitor-nodejs @capacitor/core @capacitor/cli @capacitor/android --no-audit --no-fund
+          npm install --legacy-peer-deps --no-audit --no-fund
+          npm install capacitor-nodejs @capacitor/core @capacitor/cli @capacitor/android --legacy-peer-deps --no-audit --no-fund
           
           if [ -d "public/nodejs" ]; then
             cd public/nodejs
-            npm install --production --no-audit --no-fund
+            npm install --production --legacy-peer-deps --no-audit --no-fund
             cd ../..
           fi
 
@@ -38,7 +38,11 @@ jobs:
           npx @capacitor/cli add android || true
           npx @capacitor/cli sync android
           
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml || true
+          # Injeta permissões de Foreground Service, WakeLock e Bateria no AndroidManifest.xml
+          MANIF="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIF" ]; then
+            sed -i 's/<application/<uses-permission android:name="android.permission.FOREGROUND_SERVICE" \/>\n    <uses-permission android:name="android.permission.WAKE_LOCK" \/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>\n    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" \/>\n    <application android:usesCleartextTraffic="true"/g' "$MANIF"
+          fi
 
       - name: Corrigir conflito de duplicidade Kotlin
         run: |
