@@ -1,4 +1,3 @@
-
 name: Compilar APK Autonomo Local (Node.js Embutido)
 
 on:
@@ -28,50 +27,42 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y zstd binutils python3 zip
           mkdir -p lib_node_temp
-          
-          # Executa o seu script de download. Certifique-se de que ele baixa a libnode.so ou um executável válido.
           if [ -f scripts/download_node.py ]; then
             python3 scripts/download_node.py
           fi
-          
-          # Processa o pacote deb caso o script tenha gerado um
           if [ -f node.deb ]; then
             ar x node.deb
             if [ -f data.tar.zst ]; then tar --zstd -xf data.tar.zst; fi
             if [ -f data.tar.xz ]; then tar -xf data.tar.xz; fi
             if [ -f data.tar.gz ]; then tar -xf data.tar.gz; fi
           fi
-          
-          # Localiza o binário do node extraído e renomeia para libnode.so
           NODE_BIN=$(find . -type f -name "node" -o -name "libnode.so" | head -n 1)
           if [ -n "$NODE_BIN" ]; then
             cp "$NODE_BIN" lib_node_temp/libnode.so
           else
-            echo "Aviso: Binário do Node não encontrado de forma automatizada. Criando placeholder funcional se necessário."
             touch lib_node_temp/libnode.so
           fi
 
       - name: Preparar Projeto e Sincronizar Capacitor
         run: |
+          # CORREÇÃO: Força a instalação explícita dos pacotes do Capacitor essenciais antes do sync
+          npm install @capacitor/core@6.0.0 @capacitor/android@6.0.0 @capacitor/cli@6.0.0 --no-audit --no-fund
           npm install --no-audit --no-fund
+          
           mkdir -p www
-          cp public/index.html www/index.html || echo "Criando index padrão" && echo "<h1>Disparador</h1>" > www/index.html
+          cp public/index.html www/index.html || echo "<h1>Disparador</h1>" > www/index.html
 
-          # Remove build antigo se houver e adiciona a plataforma Android nativa
           rm -rf android
           npx @capacitor/cli add android
           npx @capacitor/cli sync android
 
-          # Injeta o executável do Node.js na pasta de dependências nativas do APK
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
 
-          # Copia os ficheiros reais do seu backend (server.js e a interface) para os Assets do APK
           mkdir -p android/app/src/main/assets/public
           cp server.js android/app/src/main/assets/
           cp public/index.html android/app/src/main/assets/public/
 
-          # OBRIGA O ANDROID A EXTRAIR O BINÁRIO COM PERMISSÃO DE EXECUÇÃO E LIBERA TRÁFEGO HTTP LOCAL
           sed -i 's/<application/<application android:usesCleartextTraffic="true" android:extractNativeLibs="true" /' android/app/src/main/AndroidManifest.xml
 
       - name: Compilar APK Debug
