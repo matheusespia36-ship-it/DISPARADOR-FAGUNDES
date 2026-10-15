@@ -108,7 +108,7 @@ jobs:
                               pb.environment().put("PORT", "3000");
                               pb.environment().put("HOME", filesDir.getAbsolutePath());
                               
-                              File logFile = new File(filesDir, "node.log");
+                              File logFile = new File(context.getExternalFilesDir(null), "node.log");
                               pb.redirectErrorStream(true);
                               pb.redirectOutput(logFile);
                               
