@@ -1,4 +1,4 @@
-name: Compilar APK Autonomo Local (Node.js Embutido)
+name: Compilar APK Autonomo Local (Node.js Embutido Oficial)
 
 on:
   push:
@@ -23,130 +23,32 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Baixar Binario Node.js ARM64 Nativo
-        run: |
-          sudo apt-get update && sudo apt-get install -y zstd binutils python3 zip
-          python3 scripts/download_node.py
-          
-          ar x node.deb
-          if [ -f data.tar.zst ]; then tar --zstd -xf data.tar.zst; fi
-          if [ -f data.tar.xz ]; then tar -xf data.tar.xz; fi
-          if [ -f data.tar.gz ]; then tar -xf data.tar.gz; fi
-          
-          NODE_BIN=$(find . -type f -name "node" | head -n 1)
-          if [ -n "$NODE_BIN" ]; then
-            mkdir -p lib_node_temp
-            cp "$NODE_BIN" lib_node_temp/libnode.so
-            echo "-> Executavel Node.js extraido!"
-          else
-            echo "-> Erro ao localizar o executavel do Node.js!"
-            exit 1
-          fi
-
-      - name: Preparar Projeto e Compactar Backend
+      - name: Instalar Dependencias do Projeto
         run: |
           npm install --no-audit --no-fund
+          npm install capacitor-nodejs --save
+          
           mkdir -p www
           cp public/index.html www/index.html
 
-          mkdir -p backend_pack
-          cp server.js package.json backend_pack/
-          cp -r node_modules backend_pack/ || true
-          mkdir -p backend_pack/public
-          cp public/index.html backend_pack/public/
+      - name: Preparar Backend para o App
+        run: |
+          # O plugin capacitor-nodejs espera que o backend fique nesta pasta:
+          mkdir -p nodejs-assets/nodejs-project
+          cp server.js package.json nodejs-assets/nodejs-project/
           
-          cd backend_pack
-          zip -r -q ../backend.zip .
-          cd ..
+          # Instala apenas as bibliotecas de producao no backend
+          cd nodejs-assets/nodejs-project
+          npm install --production --no-audit --no-fund
+          cd ../..
 
+      - name: Gerar Projeto Android
+        run: |
           rm -rf android
           npx @capacitor/cli add android
           npx @capacitor/cli sync android
 
-          mkdir -p android/app/src/main/jniLibs/arm64-v8a
-          cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
-
-          mkdir -p android/app/src/main/assets
-          cp backend.zip android/app/src/main/assets/
-
-          PACKAGE_PATH="android/app/src/main/java/com/disparador/app"
-          mkdir -p "$PACKAGE_PATH"
-          cat << 'JAVA' > "$PACKAGE_PATH/MainActivity.java"
-          package com.disparador.app;
-
-          import android.os.Bundle;
-          import android.content.Context;
-          import com.getcapacitor.BridgeActivity;
-          import java.io.*;
-          import java.util.zip.ZipEntry;
-          import java.util.zip.ZipInputStream;
-
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  iniciarNodeJSInternal();
-              }
-
-              private void iniciarNodeJSInternal() {
-                  new Thread(() -> {
-                      try {
-                          Context context = getApplicationContext();
-                          File filesDir = context.getFilesDir();
-                          File nodeDir = new File(filesDir, "nodejs-project");
-
-                          File serverFile = new File(nodeDir, "server.js");
-                          if (!serverFile.exists()) {
-                              unzipAsset(context, "backend.zip", nodeDir);
-                          }
-
-                          String nodeBinary = context.getApplicationInfo().nativeLibraryDir + "/libnode.so";
-
-                          if (new File(nodeBinary).exists() && serverFile.exists()) {
-                              ProcessBuilder pb = new ProcessBuilder(nodeBinary, serverFile.getAbsolutePath());
-                              pb.directory(nodeDir);
-                              pb.environment().put("PORT", "3000");
-                              pb.environment().put("HOME", filesDir.getAbsolutePath());
-                              
-                              File logFile = new File(context.getExternalFilesDir(null), "node.log");
-                              pb.redirectErrorStream(true);
-                              pb.redirectOutput(logFile);
-                              
-                              pb.start();
-                          }
-                      } catch (Exception e) {
-                          e.printStackTrace();
-                      }
-                  }).start();
-              }
-
-              private void unzipAsset(Context context, String assetName, File destDir) throws IOException {
-                  destDir.mkdirs();
-                  InputStream is = context.getAssets().open(assetName);
-                  ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
-                  ZipEntry ze;
-                  byte[] buffer = new byte[8192];
-                  
-                  while ((ze = zis.getNextEntry()) != null) {
-                      File file = new File(destDir, ze.getName());
-                      if (ze.isDirectory()) {
-                          file.mkdirs();
-                      } else {
-                          file.getParentFile().mkdirs();
-                          FileOutputStream fos = new FileOutputStream(file);
-                          int count;
-                          while ((count = zis.read(buffer)) != -1) {
-                              fos.write(buffer, 0, count);
-                          }
-                          fos.close();
-                      }
-                      zis.closeEntry();
-                  }
-                  zis.close();
-              }
-          }
-          JAVA
-
+          # Permite comunicação interna HTTP no localhost do celular
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
 
       - name: Compilar APK Debug

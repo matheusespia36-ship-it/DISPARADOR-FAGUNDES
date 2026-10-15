@@ -1,16 +1,11 @@
 {
   "appId": "com.disparador.app",
-  "appName": "Disparador WhatsApp",
+  "appName": "Disparador",
   "webDir": "www",
-  "server": {
-    "androidScheme": "https",
-    "allowNavigation": [
-      "*"
-    ]
-  },
+  "bundledWebRuntime": false,
   "plugins": {
-    "CapacitorHttp": {
-      "enabled": true
+    "CapacitorNodeJS": {
+      "nodeDir": "nodejs-project"
     }
   }
 }
