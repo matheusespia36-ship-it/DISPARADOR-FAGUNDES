@@ -20,8 +20,11 @@ jobs:
       - name: Instalar Dependências e Capacitor
         run: |
           npm install
+          npm install @capacitor/core @capacitor/cli @capacitor/android --no-audit --no-fund
+          
           mkdir -p www
           cp public/index.html www/index.html
+          
           npx @capacitor/cli add android || true
           npx @capacitor/cli sync android
 
