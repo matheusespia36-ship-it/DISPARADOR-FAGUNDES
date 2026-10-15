@@ -6,8 +6,12 @@
     "androidScheme": "http",
     "cleartext": true,
     "allowNavigation": [
-      "http://127.0.0.1:3000/*",
-      "http://localhost:3000/*"
+      "*"
     ]
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
   }
 }

@@ -24,11 +24,9 @@ jobs:
           mkdir -p www
           cp public/index.html www/index.html
           npx @capacitor/cli add android || true
-          
-          # Aplica o esquema HTTP no Capacitor
           npx @capacitor/cli sync android
           
-          # Habilita conexões HTTP locais no AndroidManifest
+          # Garante permissão de tráfego HTTP local no AndroidManifest
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml || true
 
       - name: Corrigir conflito de duplicidade Kotlin
