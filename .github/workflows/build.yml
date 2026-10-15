@@ -26,31 +26,64 @@ jobs:
       - name: Baixar Binario Node.js ARM64 Nativo para Android
         run: |
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
-          sudo apt-get update && sudo apt-get install -y zstd binutils curl
-          
-          # Baixa indice de pacotes em texto puro
-          curl -sL -A "Mozilla/5.0" "https://packages-cf.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages" -o Packages || true
-          
-          if [ ! -s Packages ]; then
-            curl -sL -A "Mozilla/5.0" "https://packages.termux.dev/apt/termux-main/dists/stable/main/binary-aarch64/Packages" -o Packages || true
-          fi
+          sudo apt-get update && sudo apt-get install -y zstd binutils python3
 
-          PKG_PATH=$(grep -A 15 "^Package: nodejs$" Packages | grep "^Filename:" | head -n 1 | awk '{print $2}')
-          if [ -z "$PKG_PATH" ]; then
-            PKG_PATH=$(grep -A 15 "^Package: nodejs-lts$" Packages | grep "^Filename:" | head -n 1 | awk '{print $2}')
-          fi
+          python3 -c '
+import urllib.request
+import gzip
+import re
+import sys
 
-          echo "Caminho do pacote: $PKG_PATH"
+mirrors = [
+    "https://packages-cf.termux.dev/apt/termux-main/",
+    "https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main/",
+    "https://grimler.es/termux-packages-24/"
+]
 
-          if [ -n "$PKG_PATH" ]; then
-            curl -sL -A "Mozilla/5.0" -o node.deb "https://packages-cf.termux.dev/apt/termux-main/${PKG_PATH}"
-          else
-            curl -sL -A "Mozilla/5.0" -o node.deb "https://packages-cf.termux.dev/apt/termux-main/pool/main/n/node/nodejs_20.18.0_aarch64.deb"
-          fi
+pkg_path = None
+base_used = ""
 
-          # Extrai o arquivo .deb (com suporte a zstd e xz)
+for base in mirrors:
+    try:
+        url = base + "dists/stable/main/binary-aarch64/Packages.gz"
+        print(f"Tentando indice: {url}")
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = gzip.decompress(resp.read()).decode("utf-8", errors="ignore")
+            
+        blocks = content.split("\n\n")
+        for block in blocks:
+            if re.search(r"^Package:\s*(nodejs|nodejs-lts)$", block, re.MULTILINE):
+                m = re.search(r"^Filename:\s*(.+)$", block, re.MULTILINE)
+                if m:
+                    pkg_path = m.group(1).strip()
+                    base_used = base
+                    break
+        if pkg_path:
+            break
+    except Exception as e:
+        print(f"Falha no mirror {base}: {e}")
+
+if not pkg_path:
+    print("Nenhum pacote Node.js encontrado nos mirrors.")
+    sys.exit(1)
+
+deb_url = base_used + pkg_path
+print(f"Baixando pacote oficial: {deb_url}")
+req = urllib.request.Request(deb_url, headers={"User-Agent": "Mozilla/5.0"})
+with urllib.request.urlopen(req, timeout=30) as resp, open("node.deb", "wb") as f:
+    f.write(resp.read())
+print("Download concluido com sucesso!")
+'
+
           ar x node.deb
-          tar --zstd -xf data.tar.zst 2>/dev/null || tar -xf data.tar.xz 2>/dev/null || tar -xf data.tar.gz 2>/dev/null || true
+          if [ -f data.tar.zst ]; then
+            tar --zstd -xf data.tar.zst
+          elif [ -f data.tar.xz ]; then
+            tar -xf data.tar.xz
+          elif [ -f data.tar.gz ]; then
+            tar -xf data.tar.gz
+          fi
 
           if [ -f usr/bin/node ]; then
             cp usr/bin/node android/app/src/main/jniLibs/arm64-v8a/libnode.so
