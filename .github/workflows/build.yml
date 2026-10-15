@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Baixar Código
         uses: actions/checkout@v4
@@ -17,24 +18,26 @@ jobs:
         with:
           node-version: 20
 
-      - name: Instalar Dependências Gerais e Módulos Embutidos
+      - name: Instalar Dependências e Módulos
         run: |
-          npm install
-          npm install capacitor-nodejs @capacitor/core @capacitor/cli @capacitor/android
+          npm install --no-audit --no-fund
+          npm install capacitor-nodejs @capacitor/core @capacitor/cli @capacitor/android --no-audit --no-fund
           
-          # Instala as dependências dentro da pasta nodejs embutida
-          cd public/nodejs
-          npm install --production
-          cd ../..
+          if [ -d "public/nodejs" ]; then
+            cd public/nodejs
+            npm install --production --no-audit --no-fund
+            cd ../..
+          fi
 
           mkdir -p www
           cp public/index.html www/index.html
-          cp -r public/nodejs www/nodejs
+          if [ -d "public/nodejs" ]; then
+            cp -r public/nodejs www/nodejs
+          fi
           
           npx @capacitor/cli add android || true
           npx @capacitor/cli sync android
           
-          # Garante permissões de rede no AndroidManifest
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml || true
 
       - name: Corrigir conflito de duplicidade Kotlin
