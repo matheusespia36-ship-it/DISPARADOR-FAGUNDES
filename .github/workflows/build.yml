@@ -24,6 +24,10 @@ jobs:
           mkdir -p www
           cp public/index.html www/index.html
           npx @capacitor/cli add android || true
+          
+          # Habilita conexões HTTP locais no Android
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml || true
+          
           npx @capacitor/cli sync android
 
       - name: Corrigir conflito de duplicidade Kotlin
