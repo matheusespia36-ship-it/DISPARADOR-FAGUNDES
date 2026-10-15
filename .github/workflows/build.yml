@@ -67,14 +67,15 @@ jobs:
 
       - name: Compilar APK Debug
         run: |
+          sudo apt-get update && sudo apt-get install -y gradle
           cd android
-          if [ ! -f gradlew ]; then
-            echo "-> gradlew nao encontrado. Gerando Gradle Wrapper..."
-            sudo apt-get update && sudo apt-get install -y gradle
-            gradle wrapper
+          if [ -f gradlew ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            echo "-> gradlew ausente. Compilando diretamente com Gradle nativo..."
+            gradle assembleDebug
           fi
-          chmod +x gradlew
-          ./gradlew assembleDebug
 
       - name: Disponibilizar APK para Download
         uses: actions/upload-artifact@v4
