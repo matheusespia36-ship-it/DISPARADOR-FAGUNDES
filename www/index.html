@@ -206,7 +206,7 @@ function goTo(screen) {
 async function api(path, options = {}) {
   options.headers = { ...options.headers, 'x-token': token };
   try {
-    let res = await fetch(path, options);
+    let res = await fetch('http://127.0.0.1:3000' + path, options);
     return await res.json();
   } catch(e) {
     return null;
