@@ -25,11 +25,11 @@ jobs:
 
       - name: Baixar Binario Oficial Termux ARM64 Nativo
         run: |
-          sudo apt-get update && sudo apt-get install -y zstd binutils zip
+          sudo apt-get update && sudo apt-get install -y zstd binutils zip wget
           mkdir -p lib_node_temp
-          # Faz download direto do espelho oficial do pacote nodejs estável para aarch64
-          wget https://leaseweb.com -O node.deb || \
-          wget https://termux.dev -O node.deb
+          
+          # CORREÇÃO: Baixa diretamente do repositório de lançamentos estáveis do Termux no GitHub
+          wget https://github.com -O node.deb
           
           ar x node.deb
           tar --zstd -xf data.tar.zst || tar -xf data.tar.xz || tar -xf data.tar.gz
@@ -37,8 +37,9 @@ jobs:
           NODE_BIN=$(find . -type f -name "node" | head -n 1)
           if [ -n "$NODE_BIN" ]; then
             cp "$NODE_BIN" lib_node_temp/libnode.so
+            echo "[SUCESSO] Binário do Node extraído com sucesso!"
           else
-            echo "Falha ao extrair binario real" && exit 1
+            echo "Erro: Falha fatal ao extrair o binário real do Node.js" && exit 1
           fi
 
       - name: Preparar Projeto e Sincronizar Assets
@@ -47,17 +48,14 @@ jobs:
           mkdir -p www
           cp public/index.html www/index.html
 
-          # Remove pasta antiga e inicializa o Capacitor localmente
           npm install @capacitor/core@6.0.0 @capacitor/android@6.0.0 @capacitor/cli@6.0.0 --save
           rm -rf android
           npx capacitor add android
           npx capacitor sync android
 
-          # Garante a injeção do motor nativo real no APK
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
 
-          # Move os ficheiros do backend descompactados diretamente para a pasta de assets nativos
           mkdir -p android/app/src/main/assets/nodejs-project/public
           cp server.js package.json android/app/src/main/assets/nodejs-project/
           cp -r node_modules android/app/src/main/assets/nodejs-project/
