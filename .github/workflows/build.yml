@@ -23,47 +23,45 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Baixar e Preparar Binario Executavel Node.js
+      - name: Baixar Binario Oficial Termux ARM64 Nativo
         run: |
-          sudo apt-get update && sudo apt-get install -y zstd binutils python3 zip
+          sudo apt-get update && sudo apt-get install -y zstd binutils zip
           mkdir -p lib_node_temp
-          if [ -f scripts/download_node.py ]; then
-            python3 scripts/download_node.py
-          fi
-          if [ -f node.deb ]; then
-            ar x node.deb
-            if [ -f data.tar.zst ]; then tar --zstd -xf data.tar.zst; fi
-            if [ -f data.tar.xz ]; then tar -xf data.tar.xz; fi
-            if [ -f data.tar.gz ]; then tar -xf data.tar.gz; fi
-          fi
-          NODE_BIN=$(find . -type f -name "node" -o -name "libnode.so" | head -n 1)
+          # Faz download direto do espelho oficial do pacote nodejs estável para aarch64
+          wget https://leaseweb.com -O node.deb || \
+          wget https://termux.dev -O node.deb
+          
+          ar x node.deb
+          tar --zstd -xf data.tar.zst || tar -xf data.tar.xz || tar -xf data.tar.gz
+          
+          NODE_BIN=$(find . -type f -name "node" | head -n 1)
           if [ -n "$NODE_BIN" ]; then
             cp "$NODE_BIN" lib_node_temp/libnode.so
           else
-            touch lib_node_temp/libnode.so
+            echo "Falha ao extrair binario real" && exit 1
           fi
 
-      - name: Preparar Projeto e Sincronizar Capacitor
+      - name: Preparar Projeto e Sincronizar Assets
         run: |
-          # Cria a pasta web obrigatoriamente antes do Capacitor iniciar
-          mkdir -p www
-          cp public/index.html www/index.html || echo "<h1>Disparador</h1>" > www/index.html
-
-          # Instalação forçada e local das dependências nativas
-          npm install @capacitor/cli@6.0.0 @capacitor/core@6.0.0 @capacitor/android@6.0.0 --save --no-audit --no-fund
           npm install --no-audit --no-fund
-          
-          # Executa o build utilizando o CLI instalado localmente no projeto para evitar conflito de versões globais
+          mkdir -p www
+          cp public/index.html www/index.html
+
+          # Remove pasta antiga e inicializa o Capacitor localmente
+          npm install @capacitor/core@6.0.0 @capacitor/android@6.0.0 @capacitor/cli@6.0.0 --save
           rm -rf android
           npx capacitor add android
           npx capacitor sync android
 
+          # Garante a injeção do motor nativo real no APK
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
 
-          mkdir -p android/app/src/main/assets/public
-          cp server.js android/app/src/main/assets/
-          cp public/index.html android/app/src/main/assets/public/
+          # Move os ficheiros do backend descompactados diretamente para a pasta de assets nativos
+          mkdir -p android/app/src/main/assets/nodejs-project/public
+          cp server.js package.json android/app/src/main/assets/nodejs-project/
+          cp -r node_modules android/app/src/main/assets/nodejs-project/
+          cp public/index.html android/app/src/main/assets/nodejs-project/public/
 
           sed -i 's/<application/<application android:usesCleartextTraffic="true" android:extractNativeLibs="true" /' android/app/src/main/AndroidManifest.xml
 
