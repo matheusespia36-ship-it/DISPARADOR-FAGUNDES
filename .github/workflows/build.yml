@@ -12,7 +12,7 @@ jobs:
       - name: Baixar Codigo
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js 22
+      - name: Configurar Node.js 22 (Ambiente de Build)
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -23,23 +23,24 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Baixar Binario Oficial Termux ARM64 Nativo
+      - name: Baixar e Extrair Motor Node.js Nativo para Android ARM64
         run: |
-          sudo apt-get update && sudo apt-get install -y zstd binutils zip wget
+          sudo apt-get update && sudo apt-get install -y tar zip wget
           mkdir -p lib_node_temp
           
-          # CORREÇÃO: Baixa diretamente do repositório de lançamentos estáveis do Termux no GitHub
-          wget https://github.com -O node.deb
+          # Descarrega o binário oficial estático pré-compilado para arquiteturas de telemóveis Linux/Android ARM64
+          wget https://nodejs.org -O node_native.tar.xz
           
-          ar x node.deb
-          tar --zstd -xf data.tar.zst || tar -xf data.tar.xz || tar -xf data.tar.gz
+          # Descompacta o pacote tar.xz
+          tar -xf node_native.tar.xz
           
-          NODE_BIN=$(find . -type f -name "node" | head -n 1)
+          # Localiza o executável real dentro da estrutura extraída e copia como libnode.so
+          NODE_BIN=$(find node-v22.9.0-linux-arm64 -type f -name "node" | head -n 1)
           if [ -n "$NODE_BIN" ]; then
             cp "$NODE_BIN" lib_node_temp/libnode.so
-            echo "[SUCESSO] Binário do Node extraído com sucesso!"
+            echo "[SUCESSO] Motor binário real do Node.js ARM64 mapeado com sucesso!"
           else
-            echo "Erro: Falha fatal ao extrair o binário real do Node.js" && exit 1
+            echo "Erro fatal: Binário bin/node não encontrado no pacote oficial." && exit 1
           fi
 
       - name: Preparar Projeto e Sincronizar Assets
@@ -53,9 +54,11 @@ jobs:
           npx capacitor add android
           npx capacitor sync android
 
+          # Injeta o motor nativo real de 60MB dentro das dependências nativas do APK
           mkdir -p android/app/src/main/jniLibs/arm64-v8a
           cp lib_node_temp/libnode.so android/app/src/main/jniLibs/arm64-v8a/
 
+          # Organiza os ficheiros completos do backend dentro do armazenamento de assets do aplicativo
           mkdir -p android/app/src/main/assets/nodejs-project/public
           cp server.js package.json android/app/src/main/assets/nodejs-project/
           cp -r node_modules android/app/src/main/assets/nodejs-project/
