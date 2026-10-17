@@ -1,484 +1,1673 @@
-
 <!doctype html>
-<html>
+<html lang="pt-BR">
 <head>
-<meta charset="utf8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Disparador WhatsApp</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://googleapis.com">
+<meta name="description" content="Disparador e agendador automático de relatórios e mensagens para grupos de WhatsApp com integração Baileys.">
+<meta property="og:title" content="Disparador WhatsApp">
+<meta property="og:description" content="Disparador e agendador automático de relatórios e mensagens para grupos de WhatsApp com integração Baileys.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <style>
-:root{
-  --font-ui:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --font-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
-  --bg-outer:#080D0B;
-  --bg:#0D1411;
-  --surface:#16201B;
-  --line:#26352D;
-  --line-strong:#3A4D43;
-  --fg:#EAF2EE;
-  --muted:#93A89D;
-  --accent:#2EE08A;
-  --accent-ink:#06130C;
-  --accent-text:#2EE08A;
-  --accent-soft:rgba(46,224,138,.12);
-  --line-accent:#1F4D39;
-  --off-track:#2B3A32;
-  --off-knob:#93A89D;
-  --danger:#FF8A8A;
-  --danger-soft:rgba(255,138,138,.12);
-  color-scheme:dark;
+:root {
+  --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --bg-outer: #060B08;
+  --bg: #0C1511;
+  --surface: #14221C;
+  --surface-hover: #1A2B23;
+  --line: #22372D;
+  --line-strong: #334E41;
+  --fg: #EAF4EE;
+  --muted: #8EA79B;
+  --accent: #2EE08A;
+  --accent-ink: #051A10;
+  --accent-text: #2EE08A;
+  --accent-soft: rgba(46, 224, 138, 0.12);
+  --accent-border: #1F4D39;
+  --off-track: #263830;
+  --off-knob: #8EA79B;
+  --danger: #FF7070;
+  --danger-soft: rgba(255, 112, 112, 0.12);
+  --warning: #F5B041;
+  --warning-soft: rgba(245, 176, 65, 0.12);
+  color-scheme: dark;
 }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;background:var(--bg-outer);color:var(--fg);font-family:var(--font-ui);font-size:14px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));
-  padding-right:max(16px,env(safe-area-inset-right,0px));
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
+body {
+  background: var(--bg-outer);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
 }
-button,input,select{font:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent-text);outline-offset:2px}
-h1,h2,p{margin:0}
-h1{font-size:28px;font-weight:800;letter-spacing:-.5px}
-h2{font-size:16px;font-weight:700}
-.sm{font-size:12px}
-.muted{color:var(--muted)}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-#app{height:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;background:var(--bg)}
-@media (min-width:520px){
-  body{padding-block:16px}
-  #app{border:1px solid var(--line);border-radius:28px;overflow:hidden}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+h2 { font-size: 16px; font-weight: 700; }
+.sm { font-size: 12px; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+
+#app {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
 }
-.stage{flex:1;min-height:0;position:relative}
-.screen{position:absolute;inset:0;display:flex;flex-direction:column}
-.body{flex:1;min-height:0;overflow-y:auto;padding:24px 20px 16px;display:flex;flex-direction:column;gap:16px}
-.foot{flex:none;display:flex;gap:12px;padding:12px 20px 16px;border-top:1px solid var(--line);background:var(--bg)}
-.bar{flex:none;display:flex;align-items:center;gap:4px;padding:16px 12px 4px}
-.bar h1{flex:1;font-size:22px;letter-spacing:-.3px}
-.iconbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:none;border:0;border-radius:12px}
-.iconbtn.accent{color:var(--accent-text)}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.pill{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:700}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--accent-text)}
-.proto{font-size:12px;color:var(--muted);margin-top:-8px}
-.next{display:flex;align-items:center;gap:16px;padding:16px 18px;border-radius:20px;background:var(--surface);border:1px solid var(--line)}
-.next .big{font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1;color:var(--accent-text);font-variant-numeric:tabular-nums}
-.next .lbl{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
-.next .nm{font-size:14px;font-weight:600;margin-top:4px}
-.sect{display:flex;align-items:baseline;justify-content:space-between;margin-top:4px}
-.cards{display:flex;flex-direction:column;gap:12px}
-.card{display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:18px;background:var(--surface);border:1px solid var(--line)}
-.card.off .card-title{color:var(--muted)}
-.card-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.card-title{min-height:44px;margin-block:-8px;padding:0;background:none;border:0;text-align:left;font-size:16px;font-weight:700}
-.sw{flex:none;width:52px;height:44px;margin:-9px -6px -9px 0;padding:0;background:none;border:0;display:flex;align-items:center;justify-content:flex-end}
-.track{width:44px;height:26px;padding:3px;border-radius:13px;background:var(--off-track);display:flex;align-items:center;justify-content:flex-start}
-.knob{width:20px;height:20px;border-radius:50%;background:var(--off-knob)}
-.sw[aria-pressed="true"] .track{background:var(--accent);justify-content:flex-end}
-.sw[aria-pressed="true"] .knob{background:var(--accent-ink)}
-.meta{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
-.meta svg{flex:none}
-.okt{color:var(--accent-text);font-weight:600}
-.empty{padding:24px 16px;border-radius:18px;border:1px dashed var(--line-strong);text-align:center;color:var(--muted);font-size:14px;line-height:1.5}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 20px;border-radius:16px;border:1.5px solid transparent;font-weight:800;font-size:15px}
-.btn.primary{background:var(--accent);color:var(--accent-ink)}
-.btn.outline{background:none;border-color:var(--accent-text);color:var(--accent-text)}
-.btn.ghost{background:none;border-color:var(--line-strong);color:var(--fg)}
-.btn.small{min-height:44px;padding:0 16px;border-radius:12px;font-size:13px}
-.btn.block{width:100%}
-.btn.danger{background:none;border-color:var(--danger);color:var(--danger)}
-.foot .btn{flex:1}
-.foot .btn.primary{flex:1.4}
-.field{display:flex;flex-direction:column;gap:8px}
-.field>label,.lbl2{font-size:13px;font-weight:700;color:var(--muted)}
-input[type=text],input[type=time],input[type=search],select{width:100%;height:48px;padding:0 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:15px}
-input[type=file]{font-size:13px;max-width:100%}
-.err{color:var(--danger);font-size:12px;font-weight:600}
-.row{display:flex;align-items:center;gap:8px}
-.row input{flex:1;min-width:0}
-.seg{display:flex;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
-.seg button{flex:1;min-height:40px;border:0;border-radius:10px;background:none;color:var(--muted);font-weight:600;font-size:14px}
-.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:800}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:inline-flex;align-items:center;gap:2px;min-height:40px;padding:0 6px 0 14px;border-radius:999px;background:var(--accent-soft);border:1px solid var(--line-accent);color:var(--accent-text);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
-.chip button{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;background:none;color:inherit;border-radius:50%}
-.src{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:14px;background:var(--accent-soft);border:1.5px solid var(--accent-text)}
-.src .ttl{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700}
-.src .ttl svg{color:var(--accent-text)}
-.epbox{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 8px 8px 12px;border-radius:10px;background:var(--bg);font-size:12px;color:var(--muted)}
-.mono{font-family:var(--font-mono);min-width:0;overflow-wrap:anywhere;user-select:all}
-.picker{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:52px;padding:0 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-weight:600;font-size:15px;text-align:left}
-.picker .l{display:flex;align-items:center;gap:12px;min-width:0}
-.picker.ph{color:var(--muted)}
-.avatar{width:36px;height:36px;flex:none;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-weight:800}
-.glist{display:flex;flex-direction:column;gap:8px}
-.gitem{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:left}
-.gitem[aria-pressed="true"]{background:var(--accent-soft);border:1.5px solid var(--accent-text)}
-.gitem .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700;font-size:15px}
-.gitem .t small{font-size:12px;font-weight:500;color:var(--muted)}
-.tick{width:24px;height:24px;flex:none;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center}
-.hitem{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
-.hic{width:32px;height:32px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent-text)}
-.hic.bad{background:var(--danger-soft);color:var(--danger)}
-.hitem .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.hitem .t b{font-size:15px}
-.hitem .t span{font-size:12px;color:var(--muted)}
-.hitem .t .bad{color:var(--danger);font-weight:600}
-.stat{display:flex;align-items:center;gap:14px;padding:18px;border-radius:20px;background:var(--accent-soft);border:1px solid var(--line-accent)}
-.stat .ic{width:48px;height:48px;flex:none;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center}
-.stat b{display:block;font-size:18px;font-weight:800}
-.stat span{font-size:13px;color:var(--muted)}
-.box{display:flex;flex-direction:column;gap:10px}
-.kv{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 10px 10px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
-.kv .mono{font-size:15px;font-weight:600}
-.help{font-size:12px;line-height:1.5;color:var(--muted)}
-.checks{display:flex;flex-direction:column;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
-.checks div{display:flex;align-items:center;gap:12px;padding:14px 16px;font-size:14px;font-weight:600}
-.checks div+div{border-top:1px solid var(--line)}
-.mini{width:24px;height:24px;flex:none;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:flex;align-items:center;justify-content:center}
-.qr{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:center}
-.qr img{width:min(220px,100%);height:auto;border-radius:10px}
-.log-box{
-  background:var(--surface);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:12px 14px;
-  font-family:var(--font-mono);
-  font-size:12px;
-  line-height:1.6;
-  max-height:160px;
-  overflow-y:auto;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
+@media (min-width: 520px) {
+  body { padding: 12px; }
+  #app {
+    height: calc(100vh - 24px);
+    max-height: 920px;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  }
 }
-.log-entry{display:flex;gap:8px;word-break:break-all}
-.log-time{color:var(--muted);flex:none}
-.log-msg{color:var(--fg)}
-.log-err{color:var(--danger);font-weight:600}
-.log-ok{color:var(--accent-text)}
-#nav{flex:none;display:flex;justify-content:space-around;padding:6px 12px 10px;border-top:1px solid var(--line);background:var(--bg)}
-.tab{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:72px;min-height:48px;padding:4px 8px;background:none;border:0;color:var(--muted);font-size:11px;font-weight:600}
-.tab[aria-current="page"]{color:var(--accent-text);font-weight:700}
-#toast{position:absolute;left:16px;right:16px;bottom:12px;z-index:5;padding:12px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:13px;font-weight:600;text-align:center;opacity:0;transform:translateY(8px);pointer-events:none;transition:opacity .2s,transform .2s}
-#toast.show{opacity:1;transform:none}
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.screen[hidden] { display: none !important; }
+
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  z-index: 2;
+}
+.bar-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.bar-title h1 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+.foot {
+  flex: none;
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.iconbtn {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--fg);
+  padding: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.iconbtn:hover { background: var(--surface); border-color: var(--line); }
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pill.open { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-border); }
+.pill.needsPairing { background: var(--warning-soft); color: var(--warning); border: 1px solid rgba(245, 176, 65, 0.3); }
+.pill.connecting, .pill.reconnecting { background: rgba(142, 167, 155, 0.15); color: var(--muted); border: 1px solid var(--line); }
+.pill.offline, .pill.loggedOut { background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(255, 112, 112, 0.3); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+.cards { display: flex; flex-direction: column; gap: 12px; }
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition: border-color 0.15s;
+}
+.card:hover { border-color: var(--line-strong); }
+.card.off { opacity: 0.65; }
+.card.off .card-title { color: var(--muted); }
+.card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.card-title {
+  background: none;
+  border: 0;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fg);
+  padding: 0;
+  flex: 1;
+}
+.card-title:hover { color: var(--accent); }
+
+.sw {
+  flex: none;
+  width: 48px;
+  height: 30px;
+  padding: 0;
+  background: none;
+  border: 0;
+  display: flex;
+  align-items: center;
+}
+.track {
+  width: 48px;
+  height: 28px;
+  padding: 3px;
+  border-radius: 14px;
+  background: var(--off-track);
+  display: flex;
+  align-items: center;
+  transition: background 0.2s;
+}
+.knob {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--off-knob);
+  transition: transform 0.2s, background 0.2s;
+}
+.sw[aria-pressed="true"] .track { background: var(--accent); }
+.sw[aria-pressed="true"] .knob { transform: translateX(20px); background: var(--accent-ink); }
+
+.meta { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.meta svg { flex: none; }
+.okt { color: var(--accent); font-weight: 600; }
+.empty {
+  padding: 32px 20px;
+  border-radius: 18px;
+  border: 1px dashed var(--line-strong);
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  font-size: 14px;
+  transition: filter 0.15s, transform 0.05s, background 0.15s;
+}
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.05); }
+.btn.outline { background: transparent; border-color: var(--accent); color: var(--accent); }
+.btn.outline:hover { background: var(--accent-soft); }
+.btn.ghost { background: var(--surface); border-color: var(--line); color: var(--fg); }
+.btn.ghost:hover { background: var(--surface-hover); border-color: var(--line-strong); }
+.btn.small { min-height: 38px; padding: 0 14px; border-radius: 10px; font-size: 13px; }
+.btn.block { width: 100%; }
+.btn.danger { background: var(--danger-soft); border-color: rgba(255, 112, 112, 0.3); color: var(--danger); }
+.btn.danger:hover { background: rgba(255, 112, 112, 0.2); }
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field > label, .lbl2 { font-size: 13px; font-weight: 700; color: var(--muted); }
+input[type=text], input[type=time], input[type=search], textarea, select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--fg);
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+textarea { resize: vertical; min-height: 72px; }
+
+.row { display: flex; align-items: center; gap: 8px; }
+.row input { flex: 1; min-width: 0; }
+
+.seg {
+  display: flex;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  gap: 4px;
+}
+.seg button {
+  flex: 1;
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13px;
+  transition: background 0.15s, color 0.15s;
+}
+.seg button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 6px 0 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.chip button {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: inherit;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  text-align: left;
+}
+.picker .l { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.avatar {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.glist { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.gitem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+.gitem:hover { background: var(--surface-hover); border-color: var(--line-strong); }
+.gitem .t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gitem .t b { font-size: 14px; }
+.gitem .t small { font-size: 12px; color: var(--muted); }
+
+.hitem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.hic {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.hic.bad { background: var(--danger-soft); color: var(--danger); }
+.hitem .t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.hitem .t b { font-size: 14px; color: var(--fg); }
+.hitem .t span { font-size: 12px; color: var(--muted); }
+.hitem .t .bad { color: var(--danger); font-weight: 600; font-size: 12px; }
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.stat .ic {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stat div { display: flex; flex-direction: column; gap: 2px; }
+.stat b { font-size: 15px; }
+.stat span { font-size: 12px; color: var(--muted); }
+
+.box {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.epbox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.file-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+.file-dropzone {
+  padding: 22px 16px;
+  border-radius: 16px;
+  border: 2px dashed var(--line-strong);
+  text-align: center;
+  cursor: pointer;
+  background: rgba(20, 34, 28, 0.4);
+  transition: border-color 0.2s, background 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.file-dropzone:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.qr-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.qr-box img {
+  width: 220px;
+  height: 220px;
+  border-radius: 12px;
+  background: white;
+  padding: 8px;
+}
+
+.log-box {
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.log-entry { display: flex; gap: 6px; }
+.log-time { color: var(--muted); flex: none; }
+.log-err { color: var(--danger); font-weight: 600; }
+.log-ok { color: var(--accent); }
+
+#nav {
+  flex: none;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 12px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 72px;
+  padding: 6px 12px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 12px;
+  transition: color 0.15s;
+}
+.tab[aria-current="page"] { color: var(--accent); font-weight: 700; }
+.tab svg { transition: transform 0.15s; }
+.tab[aria-current="page"] svg { transform: translateY(-1px); }
+
+#toast {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 74px;
+  z-index: 100;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: var(--fg);
+  color: var(--bg-outer);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
 </style>
 </head>
 <body>
 <div id="app">
   <div class="stage">
-    <div id="s-home" class="screen"></div>
-    <div id="s-hist" class="screen" hidden></div>
-    <div id="s-conn" class="screen" hidden></div>
-    <div id="s-novo" class="screen" hidden></div>
-    <div id="s-grupos" class="screen" hidden></div>
+    <section class="screen" id="s-home" hidden></section>
+    <section class="screen" id="s-hist" hidden></section>
+    <section class="screen" id="s-conn" hidden></section>
+    <section class="screen" id="s-novo" hidden></section>
+    <section class="screen" id="s-grupos" hidden></section>
+    <div id="toast" role="status" aria-live="polite"></div>
   </div>
-  <nav id="nav"></nav>
-  <div id="toast"></div>
+  <nav id="nav" aria-label="Navegação principal">
+    <button class="tab" data-act="tab" data-tab="home" aria-current="page"></button>
+    <button class="tab" data-act="tab" data-tab="hist"></button>
+    <button class="tab" data-act="tab" data-tab="conn"></button>
+  </nav>
 </div>
 
 <script>
 (function () {
-var $ = function (s, r) { return (r || document).querySelector(s); };
-var esc = function (s) {
-  return String(s).replace(/[&<>"']/g, function (c) {
-    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-  });
-};
-var norm = function (s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
-var slug = function (s) { return norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var esc = function (s) {
+    return String(s || '').replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  };
+  var norm = function (s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); };
+  var slug = function (s) { return norm(s).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
 
-var BACKEND_URL = 'http://localhost:3000';
-var TOKEN = window.ANDROID_TOKEN || 'k7Qx-92mf-LpT4';
+  var BACKEND_URL = window.BACKEND_URL !== undefined ? window.BACKEND_URL : '';
+  var TOKEN = window.SERVER_TOKEN || localStorage.getItem('disparador_token') || 'minhasenha';
 
-var state = {
-  screen: 'home',
-  waStatus: 'verificando',
-  qrImage: null,
-  groups: [],
-  dispatches: [],
-  history: [],
-  logs: [],
-  draft: null, editingId: null, errors: {}, confirmDel: false, q: '', tokenShown: false, qr: false, nextId: 1
-};
+  var state = {
+    screen: 'home',
+    waStatus: 'verificando',
+    qrImage: null,
+    groups: [],
+    dispatches: [],
+    history: [],
+    logs: [],
+    draft: null,
+    editingSlug: null,
+    errors: {},
+    q: '',
+    tokenShown: false,
+    qrShown: true,
+    groupFilter: '',
+    pairPhone: '',
+    pairCode: ''
+  };
 
-var I = {
-  send: '', list: '', wifi: '', back: '', chev: '', plus: '', clock: '', users: '', file: '', check: '', refresh: '', copy: '', x: '', alert: '', qr: ''
-};
-var ic = function (n, s, sw) {
-  return '<span class="mini">' + (I[n] || '') + '</span>';
-};
+  var I = {
+    send: '<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>',
+    list: '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+    wifi: '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
+    back: '<polyline points="15 18 9 12 15 6"/>',
+    chev: '<polyline points="9 18 15 12 9 6"/>',
+    plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    refresh: '<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+    alert: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    qr: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><line x1="14" y1="14" x2="14.01" y2="14"/><line x1="21" y1="14" x2="21.01" y2="21"/><line x1="14" y1="21" x2="14.01" y2="21"/><line x1="21" y1="21" x2="21.01" y2="21"/><line x1="17.5" y1="17.5" x2="17.51" y2="17.5"/>',
+    trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+    upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'
+  };
 
-var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
-var timeNow = function () { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); };
+  var ic = function (n, s, sw) {
+    return '<svg width="' + (s || 18) + '" height="' + (s || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (I[n] || '') + '</svg>';
+  };
 
-function addLog(msg, type) {
-  state.logs.unshift({ time: timeNow(), msg: msg, type: type || 'normal' });
-  if (state.logs.length > 50) state.logs.pop();
-  if (state.screen === 'conn') renderConn();
-}
+  var pad2 = function (n) { return (n < 10 ? '0' : '') + n; };
+  var timeNow = function () { var d = new Date(); return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()); };
 
-async function api(path, options) {
-  options = options || {};
-  options.headers = options.headers || {};
-  options.headers['x-token'] = TOKEN;
-  options.headers['Content-Type'] = 'application/json';
-  try {
-    var res = await fetch(BACKEND_URL + path, options);
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return await res.json();
-  } catch (e) {
-    addLog('Erro API (' + path + '): ' + e.message, 'err');
-    throw e;
+  function formatBytes(bytes) {
+    if (!bytes || bytes <= 0) return '0 B';
+    var k = 1024;
+    var sizes = ['B', 'KB', 'MB', 'GB'];
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   }
-}
 
-async function pollBackendData() {
-  try {
-    var data = await api('/status');
-    state.waStatus = data.whatsapp || 'conectado';
-    state.qrImage = data.qr || null;
-    if (data.groups) state.groups = data.groups;
-    if (data.dispatches) {
-      state.dispatches = data.dispatches.map(function(d) {
-        return {
-          id: d.id || slug(d.name),
-          name: d.name,
-          group: d.groupName || d.group,
-          mode: d.schedType === 'interval' ? 'interval' : 'times',
-          times: d.schedType === 'times' ? (Array.isArray(d.schedValue) ? d.schedValue : [d.schedValue]) : [],
-          interval: d.schedType === 'interval' ? Number(d.schedValue) || 120 : 120,
-          source: 'excel',
-          caption: d.caption || '',
-          active: d.active !== false,
-          last: d.lastRun || ''
-        };
-      });
+  function addLog(msg, type) {
+    state.logs.unshift({ time: timeNow(), msg: msg, type: type || 'normal' });
+    if (state.logs.length > 50) state.logs.pop();
+    if (state.screen === 'conn') renderConn();
+  }
+
+  async function api(path, options) {
+    options = options || {};
+    options.headers = options.headers || {};
+    options.headers['x-token'] = TOKEN;
+    if (options.body && typeof options.body === 'string') {
+      options.headers['Content-Type'] = 'application/json';
     }
-    addLog('GET /status 200 OK - Sincronizado', 'ok');
-  } catch (e) {
-    state.waStatus = 'offline';
-    addLog('Falha ao comunicar com o backend local', 'err');
+    try {
+      var res = await fetch(BACKEND_URL + path, options);
+      if (!res.ok) {
+        var errBody = {};
+        try { errBody = await res.json(); } catch(e) {}
+        throw new Error(errBody.error || ('HTTP ' + res.status));
+      }
+      return await res.json();
+    } catch (e) {
+      addLog('Erro API (' + path + '): ' + e.message, 'err');
+      throw e;
+    }
   }
-  if (['conn', 'home'].indexOf(state.screen) !== -1) RENDER[state.screen]();
-}
-setInterval(pollBackendData, 4000);
-pollBackendData();
 
-var INTERVALS = [[15, '15 minutos'], [30, '30 minutos'], [60, '1 hora'], [120, '2 horas'], [240, '4 horas'], [360, '6 horas']];
-var intervalText = function (m) { var f = INTERVALS.filter(function (x) { return x[0] === m; })[0]; return f ? f[1] : m + ' minutos'; };
-var joinList = function (a) { return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1]; };
-var schedText = function (d) {
-  if (d.mode === 'interval') return 'A cada ' + intervalText(d.interval);
-  return d.times.length ? 'Todo dia às ' + joinList(d.times) : 'Sem horários';
-};
+  async function pollBackendData() {
+    try {
+      var data = await api('/status');
+      state.waStatus = data.whatsapp || 'verificando';
+      if (data.qr) state.qrImage = data.qr;
+      
+      try {
+        var dData = await api('/dispatches');
+        if (dData.dispatches) state.dispatches = dData.dispatches;
+      } catch (err) {}
 
-function toast(msg) {
-  var t = $('#toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function () { t.classList.remove('show'); }, 2600);
-}
+      try {
+        var gData = await api('/groups');
+        if (gData.groups) state.groups = gData.groups;
+      } catch (err) {}
 
-function copyText(text) {
-  navigator.clipboard.writeText(text).then(function () { toast('Copiado'); });
-}
+      try {
+        var hData = await api('/history');
+        if (hData.history) state.history = hData.history;
+      } catch (err) {}
 
-function renderNav() {
-  var tabs = [['home', 'send', 'Disparos'], ['hist', 'list', 'Histórico'], ['conn', 'wifi', 'Conexão']];
-  document.querySelectorAll('.tab').forEach(function (b, i) {
-    b.innerHTML = ic(tabs[i][1], 22) + tabs[i][2];
-    b.setAttribute('aria-current', state.screen === tabs[i][0] ? 'page' : 'false');
-  });
-}
+    } catch (e) {
+      state.waStatus = 'offline';
+    }
+    if (['conn', 'home', 'hist'].indexOf(state.screen) !== -1) RENDER[state.screen]();
+  }
 
-function card(d) {
-  var last = !d.active ? 'Pausado' : (d.last ? ic('check', 16, 2.5) + 'Enviado ' + d.last : 'Ainda não enviado');
-  return '<div class="card' + (!d.active ? ' off' : '') + '">' +
-    '<div class="card-top"><button class="card-title" data-act="edit" data-id="' + d.id + '">' + esc(d.name) + '</button>' +
-    '<button class="sw" aria-pressed="' + (d.active ? 'true' : 'false') + '" data-act="toggle" data-id="' + d.id + '"><span class="track"><span class="knob"></span></span></button></div>' +
-    '<div class="meta">' + ic('users', 16) + esc(d.group) + '</div>' +
-    '<div class="meta">' + ic('clock', 16) + esc(schedText(d)) + ' · Excel</div>' +
-    '<div class="meta okt">' + last + '</div></div>';
-}
+  setInterval(pollBackendData, 4000);
+  pollBackendData();
 
-function renderHome() {
-  var act = state.dispatches.filter(function (d) { return d.active; }).length;
-  var waText = state.waStatus === 'open' ? 'WhatsApp conectado' : 'WhatsApp aguardando QR';
-  $('#s-home').innerHTML = '<div class="screen">' +
-    '<div class="bar"><h1>Disparor</h1><span class="pill"><span class="dot"></span>' + waText + '</span></div>' +
-    '<div class="body"><p class="proto">Backend Node.js nativo ativo na porta 3000.</p>' +
-    '<div class="sect"><h2>Meus disparos</h2><span class="muted">' + act + ' ativos de ' + state.dispatches.length + '</span></div>' +
-    '<div class="cards">' + (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo configurado no servidor.</div>') + '</div></div>' +
-    '<div class="foot"><button class="btn primary block" data-act="new">' + ic('plus', 20, 2.5) + 'Novo disparo</button></div></div>';
-}
+  var INTERVALS = [
+    [15, '15 minutos'],
+    [30, '30 minutos'],
+    [60, '1 hora'],
+    [120, '2 horas'],
+    [240, '4 horas'],
+    [360, '6 horas'],
+    [720, '12 horas'],
+    [1440, '24 horas']
+  ];
 
-function renderHist() {
-  $('#s-hist').innerHTML = '<div class="screen">' +
-    '<div class="bar"><h1>Histórico</h1></div>' +
-    '<div class="body"><div class="cards">' + (state.history.length ? state.history.map(function (h) {
-      return '<div class="hitem"><div class="hic' + (h.ok ? '' : ' bad') + '">' + ic(h.ok ? 'check' : 'alert', 16, 2.5) + '</div>' +
-        '<div class="t"><b>' + esc(h.name) + '</b><span>' + esc(h.group) + ' · ' + esc(h.when) + '</span>' +
-        (h.ok ? '<span class="okt">Entregue</span>' : '<span class="bad">Falhou: ' + esc(h.err) + '</span>') + '</div></div>';
-    }).join('') : '<div class="empty">Nenhum envio recente registrado.</div>') + '</div></div></div>';
-}
+  var intervalText = function (m) {
+    var f = INTERVALS.filter(function (x) { return x[0] === Number(m); })[0];
+    return f ? f[1] : m + ' minutos';
+  };
 
-function renderConn() {
-  var tok = state.tokenShown ? TOKEN : '••••-•••-••••';
-  var ipPort = 'localhost:3000';
-  var waStatusBadge = state.waStatus === 'open' ? 'Conectado e Operacional' : 'Necessita leitura de QR Code';
-  $('#s-conn').innerHTML = '<div class="screen">' +
-    '<div class="bar"><h1>Conexão</h1></div>' +
-    '<div class="body"><div class="stat"><div class="ic">' + ic('wifi', 24, 2.5) + '</div><div><b>Status: ' + waStatusBadge + '</b><span>Motor Baileys rodando localmente no APK</span></div></div>' +
-    '<div class="field"><label>Endereço local interno</label><div class="row"><input type="text" value="' + ipPort + '" readonly class="mono"><button class="btn ghost small" data-act="copy" data-text="' + ipPort + '">Copiar</button></div></div>' +
-    '<div class="field"><label>Senha de Token de Acesso</label><div class="row"><input type="text" value="' + tok + '" readonly class="mono"><button class="btn ghost small" data-act="tok">' + (state.tokenShown ? 'Ocultar' : 'Mostrar') + '</button><button class="btn ghost small" data-act="copy" data-text="' + TOKEN + '">Copiar</button></div></div>' +
-    '<div class="field"><label>Registrador de Logs / Requisições Reais</label><div class="log-box">' +
-    (state.logs.length ? state.logs.map(function(l) {
-      var cls = l.type === 'ok' ? 'log-ok' : (l.type === 'err' ? 'log-err' : 'log-msg');
-      return '<div class="log-entry"><span class="log-time">[' + l.time + ']</span><span class="' + cls + '">' + esc(l.msg) + '</span></div>';
-    }).join('') : '<div class="muted">Aguardando requisições...</div>') +
-    '</div></div>' +
-    '<div class="field"><label>Pareamento WhatsApp</label><button class="btn danger block" data-act="logout">Desconectar e Ler Novo QR Code</button></div>' +
-    (state.qr ? '<div class="qr"><button class="btn ghost small" data-act="qr">Esconder QR Code</button>' + (state.qrImage ? '<img src="' + state.qrImage + '" alt="QR Code WhatsApp">' : '<span class="muted">A carregar QR Code do servidor...</span>') + '</div>' : '') +
-    '</div></div>';
-}
+  var joinList = function (a) {
+    if (!a || !a.length) return 'Sem horários';
+    return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' e ' + a[a.length - 1];
+  };
 
-function renderNovo() {
-  var d = state.draft, e = state.errors, edit = state.editingId !== null;
-  var when = d.mode === 'times'
-    ? '<div class="chips">' + d.times.map(function (t) {
-        return '<span class="chip">' + t + '<button data-act="delTime" data-t="' + t + '">' + ic('x', 14, 2.5) + '</button></span>';
-      }).join('') + '</div>' +
-      '<div class="row"><input type="time" data-field="newTime" value="' + (d.newTime || '') + '"><button class="btn outline small" data-act="addTime">Adicionar</button></div>' +
-      (e.times ? '<span class="err">' + e.times + '</span>' : '')
-    : '<select data-field="interval">' + INTERVALS.map(function (x) {
-        return '<option value="' + x[0] + '"' + (d.interval === x[0] ? ' selected' : '') + '>A cada ' + x[1] + '</option>';
-      }).join('') + '</select>';
-  var url = BACKEND_URL + '/send/' + (slug(d.name) || 'novo-disparo');
-  $('#s-novo').innerHTML = '<div class="screen">' +
-    '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>' + (edit ? 'Editar disparo' : 'Novo disparo') + '</h1></div>' +
-    '<div class="body"><div class="field"><label>Nome do disparo</label><input type="text" data-field="name" value="' + esc(d.name || '') + '" placeholder="Ex: Promoção Dia das Mães"></div>' +
-    '<div class="field"><label>Endpoint Gerado</label><div class="epbox"><span class="mono">' + esc(url) + '</span><button class="btn ghost small" data-act="copy" data-text="' + url + '">Copiar</button></div></div>' +
-    '<div class="field"><label>Enviar para o grupo</label><button class="picker" data-act="pickGroup"><span class="l"><span class="avatar">' + (d.group ? d.group[0].toUpperCase() : '#') + '</span><span>' + (d.group ? esc(d.group) : 'Escolher grupo') + '</span></span>' + ic('chev', 20) + '</button></div>' +
-    '<div class="field"><label>Quando enviar</label><div class="seg"><button data-act="mode" data-v="times" aria-pressed="' + (d.mode === 'times' ? 'true' : 'false') + '">Horários</button><button data-act="mode" data-v="interval" aria-pressed="' + (d.mode === 'interval' ? 'true' : 'false') + '">Intervalo</button></div>' + when + '</div>' +
-    '</div><div class="foot"><button class="btn ghost" data-act="test">Testar</button><button class="btn primary" data-act="save">Salvar</button></div></div>';
-}
+  var schedText = function (d) {
+    if (d.schedType === 'interval') return 'A cada ' + intervalText(d.schedValue || 120);
+    if (d.schedType === 'fixed' || d.schedType === 'times') {
+      var times = Array.isArray(d.schedValue) ? d.schedValue : String(d.schedValue || '').split(',').map(function(s){return s.trim();}).filter(Boolean);
+      return times.length ? 'Diariamente às ' + joinList(times) : 'Sem horários definidos';
+    }
+    return 'Disparo sob demanda';
+  };
 
-function renderGrupos() {
-  $('#s-grupos').innerHTML = '<div class="screen">' +
-    '<div class="bar"><button class="iconbtn" data-act="back">' + ic('back', 24) + '</button><h1>Escolher grupo</h1></div>' +
-    '<div class="body"><div class="glist">' + (state.groups.length ? state.groups.map(function(g){
-      return '<button class="gitem" data-act="setGroup" data-name="' + esc(g.name) + '"><span class="avatar">' + g.name[0].toUpperCase() + '</span><span class="t"><b>' + esc(g.name) + '</b><small>' + (g.participants || 0) + ' membros</small></span></button>';
-    }).join('') : '<div class="empty">Nenhum grupo sincronizado ainda pelo Baileys.</div>') + '</div></div></div>';
-}
+  function toast(msg) {
+    var t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function () { t.classList.remove('show'); }, 2800);
+  }
 
-var RENDER = { home: renderHome, hist: renderHist, conn: renderConn, novo: renderNovo, grupos: renderGrupos };
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('Copiado para a área de transferência'); });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('Copiado');
+    }
+  }
 
-function show(name) {
-  state.screen = name;
-  document.querySelectorAll('.screen').forEach(function (s) { s.hidden = s.id !== 's-' + name; });
-  $('#nav').hidden = ['home', 'hist', 'conn'].indexOf(name) === -1;
-  RENDER[name]();
-  renderNav();
-}
+  function getStatusBadge() {
+    var s = state.waStatus;
+    if (s === 'open') return '<span class="pill open"><span class="dot"></span>Conectado</span>';
+    if (s === 'needsPairing') return '<span class="pill needsPairing"><span class="dot"></span>Aguardando QR</span>';
+    if (s === 'connecting' || s === 'reconnecting') return '<span class="pill connecting"><span class="dot"></span>Conectando...</span>';
+    return '<span class="pill offline"><span class="dot"></span>Offline</span>';
+  }
 
-var A = {
-  tab: function (t) { show(t.dataset.tab); },
-  new: function () {
-    state.draft = { name: '', group: '', mode: 'times', times: [], interval: 120, source: 'excel', caption: '', newTime: '', active: true };
-    state.editingId = null;
-    show('novo');
-  },
-  back: function () { show(state.screen === 'grupos' ? 'novo' : 'home'); },
-  pickGroup: function () { show('grupos'); },
-  setGroup: function (t) { state.draft.group = t.dataset.name; show('novo'); },
-  mode: function (t) { state.draft.mode = t.dataset.v; renderNovo(); },
-  addTime: function () {
-    var v = state.draft.newTime;
-    if (v && state.draft.times.indexOf(v) === -1) { state.draft.times.push(v); state.draft.times.sort(); state.draft.newTime = ''; renderNovo(); }
-  },
-  delTime: function (t) { state.draft.times = state.draft.times.filter(function (x) { return x !== t.dataset.t; }); renderNovo(); },
-  save: async function () {
+  function renderNav() {
+    var tabs = [['home', 'send', 'Disparos'], ['hist', 'list', 'Histórico'], ['conn', 'wifi', 'Conexão']];
+    document.querySelectorAll('.tab').forEach(function (b, i) {
+      b.innerHTML = ic(tabs[i][1], 20) + '<span>' + tabs[i][2] + '</span>';
+      b.setAttribute('aria-current', state.screen === tabs[i][0] ? 'page' : 'false');
+    });
+  }
+
+  function card(d) {
+    var last = !d.active ? 'Pausado' : (d.lastRunHM ? ic('check', 14, 2.5) + ' Último envio: ' + d.lastRunHM : 'Aguardando agendamento');
+    
+    var fileHtml = d.lastMessage
+      ? '<div class="meta okt sm">' + ic('file', 14) + '<span>Arquivo: <b>' + esc(d.lastMessage.fileName) + '</b> (' + formatBytes(d.lastMessage.fileSize) + ')</span></div>'
+      : '<div class="meta muted sm">' + ic('file', 14) + '<span>Sem arquivo anexado (defina ao editar)</span></div>';
+
+    var dedupBadge = d.preventDuplicates !== false
+      ? '<div class="meta sm" style="color:var(--accent); font-weight:600;">' + ic('shield', 13) + '<span>Anti-duplicado ativo (substitui mesmo nome)</span></div>'
+      : '';
+
+    return '<article class="card' + (d.active ? '' : ' off') + '">' +
+      '<div class="card-top">' +
+        '<button class="card-title" data-act="edit" data-slug="' + esc(d.slug) + '" title="Clique para editar este disparo">' + esc(d.name) + '</button>' +
+        '<button class="sw" data-act="toggle" data-slug="' + esc(d.slug) + '" aria-pressed="' + (d.active ? 'true' : 'false') + '" aria-label="Ativar/Desativar disparo"><span class="track"><span class="knob"></span></span></button>' +
+      '</div>' +
+      '<div class="meta">' + ic('users', 15) + '<span>' + esc(d.groupName || d.groupJid || 'Grupo não definido') + '</span></div>' +
+      '<div class="meta">' + ic('clock', 15) + '<span>' + esc(schedText(d)) + '</span></div>' +
+      fileHtml +
+      dedupBadge +
+      (d.caption ? '<div class="meta muted sm">' + ic('file', 13) + '<span>' + esc(d.caption) + '</span></div>' : '') +
+      '<div class="meta' + (d.active ? ' okt' : '') + '">' + last + '</div>' +
+      '<div class="card-actions" style="display:flex; gap:8px; align-items:center; margin-top:8px; padding-top:10px; border-top:1px solid var(--line);">' +
+        '<button class="btn outline small" data-act="edit" data-slug="' + esc(d.slug) + '" style="flex:1;">' + ic('edit', 14) + ' Editar Disparo</button>' +
+        '<button class="btn ghost small" data-act="testCardDispatch" data-slug="' + esc(d.slug) + '" title="Testar disparo com arquivo agora">' + ic('send', 14) + ' Testar</button>' +
+      '</div>' +
+    '</article>';
+  }
+
+  function renderHome() {
+    var act = state.dispatches.filter(function (d) { return d.active; }).length;
+    $('#s-home').innerHTML =
+      '<div class="bar">' +
+        '<div class="bar-title">' +
+          '<h1>Disparador WhatsApp</h1>' +
+        '</div>' +
+        getStatusBadge() +
+      '</div>' +
+      '<div class="body">' +
+        '<div class="stat">' +
+          '<div class="ic">' + ic('send', 22, 2.5) + '</div>' +
+          '<div>' +
+            '<b>' + act + ' disparos automáticos ativos</b>' +
+            '<span>' + state.dispatches.length + ' configurados no total</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:2px;">' +
+          '<h2>Meus Disparos</h2>' +
+          '<button class="btn ghost small" data-act="refresh">' + ic('refresh', 14) + ' Atualizar</button>' +
+        '</div>' +
+        '<div class="cards">' +
+          (state.dispatches.length ? state.dispatches.map(card).join('') : '<div class="empty">Nenhum disparo configurado ainda.<br>Clique em <b>Novo Disparo</b> abaixo para começar!</div>') +
+        '</div>' +
+      '</div>' +
+      '<div class="foot">' +
+        '<button class="btn primary block" data-act="new">' + ic('plus', 18, 2.5) + 'Novo disparo</button>' +
+      '</div>';
+  }
+
+  function renderHist() {
+    $('#s-hist').innerHTML =
+      '<div class="bar">' +
+        '<div class="bar-title"><h1>Histórico de Envios</h1></div>' +
+        '<button class="btn ghost small" data-act="clearHist">' + ic('trash', 14) + ' Limpar</button>' +
+      '</div>' +
+      '<div class="body">' +
+        '<div class="cards">' +
+          (state.history.length ? state.history.map(function (h) {
+            var whenStr = h.when ? new Date(h.when).toLocaleString('pt-BR') : 'Data não informada';
+            var isDedup = h.skipped || (h.note && h.note.includes('Duplicidade evitada'));
+
+            return '<div class="hitem" ' + (isDedup ? 'style="border-left:3px solid var(--accent);"' : '') + '>' +
+              '<span class="hic' + (h.ok ? '' : ' bad') + '" ' + (isDedup ? 'style="background:var(--accent-soft); color:var(--accent);"' : '') + '>' +
+                ic(isDedup ? 'shield' : (h.ok ? 'check' : 'alert'), 16, 2.5) +
+              '</span>' +
+              '<div class="t">' +
+                '<b>' + esc(h.name || h.slug) + '</b>' +
+                '<span>' + esc(h.group || 'Direto') + ' · ' + esc(whenStr) + (h.auto ? ' (Automático)' : '') + '</span>' +
+                (h.fileName ? '<span class="sm muted">' + ic('file', 12) + ' Arquivo: ' + esc(h.fileName) + '</span>' : '') +
+                (isDedup
+                  ? '<span class="okt" style="font-weight:700;">' + ic('shield', 12) + ' ' + esc(h.note || 'Duplicidade evitada: arquivo com mesmo conteúdo já despachado anteriormente') + '</span>'
+                  : (h.ok ? '<span class="okt">Entregue com sucesso</span>' : '<span class="bad">Falha: ' + esc(h.error || 'Erro desconhecido') + '</span>')
+                ) +
+              '</div>' +
+            '</div>';
+          }).join('') : '<div class="empty">Nenhum histórico de disparo registrado ainda.</div>') +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderConn() {
+    var tok = state.tokenShown ? TOKEN : '••••••••••••';
+    var fullBaseUrl = window.location.origin;
+    var waBadge = state.waStatus === 'open' ? 'Conectado e Operacional' : (state.waStatus === 'needsPairing' ? 'Aguardando Leitura de QR Code' : 'Conectando ao WhatsApp...');
+    
+    $('#s-conn').innerHTML =
+      '<div class="bar">' +
+        '<div class="bar-title"><h1>Conexão WhatsApp</h1></div>' +
+        getStatusBadge() +
+      '</div>' +
+      '<div class="body">' +
+        '<div class="stat">' +
+          '<div class="ic">' + ic('wifi', 22, 2.5) + '</div>' +
+          '<div><b>' + waBadge + '</b><span>Motor Baileys com suporte a QR e Código</span></div>' +
+        '</div>' +
+
+        (state.waStatus !== 'open' ?
+          '<div class="box">' +
+            '<div class="lbl2">Pareamento via QR Code</div>' +
+            '<div class="qr-box">' +
+              (state.qrImage ? '<img src="' + state.qrImage + '" alt="QR Code WhatsApp">' : '<div class="muted">Gerando QR Code...</div>') +
+              '<span class="sm muted">Abra o WhatsApp &gt; Dispositivos Conectados &gt; Conectar aparelho</span>' +
+              '<div class="row" style="margin-top:6px;">' +
+                '<button class="btn ghost small" data-act="refreshQR">' + ic('refresh', 14) + ' Recarregar QR</button>' +
+                '<button class="btn danger small" data-act="logout">Resetar Sessão</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="box">' +
+            '<div class="lbl2">Ou Conectar por Código de Telefone</div>' +
+            '<div class="row">' +
+              '<input type="text" id="phoneInput" placeholder="Ex: 5511999998888" value="' + esc(state.pairPhone) + '">' +
+              '<button class="btn outline small" data-act="requestPairCode">' + ic('phone', 14) + ' Gerar Código</button>' +
+            '</div>' +
+            (state.pairCode ? '<div class="kv" style="margin-top:6px;"><span class="lbl2">Código de Pareamento:</span><span class="mono" style="font-size:18px; letter-spacing:2px;">' + esc(state.pairCode) + '</span></div>' : '') +
+          '</div>'
+        :
+          '<div class="box">' +
+            '<div class="lbl2">Sessão Ativa</div>' +
+            '<p class="sm muted">O WhatsApp está autenticado e pronto para despachar mensagens agendadas e relatórios.</p>' +
+            '<button class="btn danger small" data-act="logout">' + ic('x', 14) + ' Desconectar e Ler Novo QR Code</button>' +
+          '</div>'
+        ) +
+
+        '<div class="box">' +
+          '<div class="lbl2">URL Base do Servidor</div>' +
+          '<div class="kv"><span class="mono">' + esc(fullBaseUrl) + '</span><button class="btn ghost small" data-act="copy" data-text="' + esc(fullBaseUrl) + '">' + ic('copy', 14) + ' Copiar</button></div>' +
+        '</div>' +
+
+        '<div class="box">' +
+          '<div class="lbl2">Token de Acesso da API (Header: x-token)</div>' +
+          '<div class="kv">' +
+            '<span class="mono">' + esc(tok) + '</span>' +
+            '<span class="row">' +
+              '<button class="btn ghost small" data-act="tok">' + (state.tokenShown ? 'Ocultar' : 'Mostrar') + '</button>' +
+              '<button class="btn ghost small" data-act="editToken">Editar</button>' +
+              '<button class="btn ghost small" data-act="copy" data-text="' + esc(TOKEN) + '">' + ic('copy', 14) + '</button>' +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="box">' +
+          '<div class="lbl2">Registrador de Eventos / Logs Recentes</div>' +
+          '<div class="log-box">' +
+            (state.logs.length ? state.logs.map(function(l) {
+              var cls = l.type === 'ok' ? 'log-ok' : (l.type === 'err' ? 'log-err' : 'log-msg');
+              return '<div class="log-entry"><span class="log-time">[' + l.time + ']</span><span class="' + cls + '">' + esc(l.msg) + '</span></div>';
+            }).join('') : '<div class="muted">Aguardando atividades...</div>') +
+          '</div>' +
+        '</div>' +
+
+        '<div class="box">' +
+          '<div class="lbl2">Disparo de Teste Manual Rápido</div>' +
+          '<p class="sm muted">Verifique a comunicação com o servidor e WhatsApp.</p>' +
+          '<button class="btn outline small" data-act="testBackend">' + ic('send', 14) + ' Executar Teste de Conexão</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderNovo() {
     var d = state.draft;
-    var payload = {
-      name: d.name,
-      groupName: d.group,
-      schedType: d.mode === 'interval' ? 'interval' : 'times',
-      schedValue: d.mode === 'interval' ? d.interval : d.times,
-      caption: d.caption,
-      active: d.active
+    var edit = state.editingSlug !== null;
+    var timesList = Array.isArray(d.times) ? d.times : (typeof d.times === 'string' && d.times ? d.times.split(',').map(function(s){return s.trim();}).filter(Boolean) : []);
+
+    var whenHtml = d.mode === 'fixed'
+      ? '<div class="field" style="margin-top:6px;">' +
+          '<div class="lbl2">Horários programados do dia:</div>' +
+          '<div class="chips">' +
+            (timesList.length ? timesList.map(function (t) {
+              return '<span class="chip">' + esc(t) + '<button data-act="delTime" data-t="' + esc(t) + '" aria-label="Remover">' + ic('x', 12) + '</button></span>';
+            }).join('') : '<span class="sm muted">Nenhum horário adicionado ainda.</span>') +
+          '</div>' +
+          '<div class="row" style="margin-top:8px;">' +
+            '<input type="time" id="newTimeInput" value="' + esc(d.newTime || '') + '">' +
+            '<button class="btn outline small" data-act="addTime">' + ic('plus', 14) + ' Adicionar</button>' +
+          '</div>' +
+          '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; align-items:center;">' +
+            '<span class="sm muted">Atalhos:</span>' +
+            ['08:00', '12:00', '14:00', '18:00', '22:00'].map(function(preset) {
+              return '<button class="btn ghost small" data-act="addPresetTime" data-time="' + preset + '" style="padding:0 8px; min-height:28px; font-size:11px;">+' + preset + '</button>';
+            }).join('') +
+          '</div>' +
+        '</div>'
+      : '<div class="field" style="margin-top:6px;">' +
+          '<label class="lbl2">Repetir envio a cada:</label>' +
+          '<select data-field="interval">' +
+            INTERVALS.map(function (x) {
+              return '<option value="' + x[0] + '"' + (Number(d.interval) === x[0] ? ' selected' : '') + '>A cada ' + x[1] + '</option>';
+            }).join('') +
+          '</select>' +
+        '</div>';
+
+    var currentSlug = d.slug || slug(d.name) || 'meu-disparo';
+    var fullWebhookUrl = window.location.origin + '/send/' + currentSlug;
+
+    // Seção de Arquivo Anexado / Escolha de Arquivo
+    var hasFile = (d.fileBase64 && !d.removeFile) || (d.lastMessage && d.lastMessage.fileName && !d.removeFile);
+    var activeFileName = d.fileName || (d.lastMessage ? d.lastMessage.fileName : '');
+    var activeFileSize = d.fileSize || (d.lastMessage ? d.lastMessage.fileSize : 0);
+    var activeMime = d.mimetype || (d.lastMessage ? d.lastMessage.mimetype : 'application/octet-stream');
+    var downloadUrl = d.slug ? (BACKEND_URL + '/dispatches/' + encodeURIComponent(d.slug) + '/file') : null;
+
+    var fileSectionHtml = '<div class="field">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<span class="lbl2">Escolha de Arquivo (Relatório / Documento)</span>' +
+        '<button class="btn outline small" data-act="triggerFileInput" style="min-height:30px; padding:0 10px; font-size:12px;">' +
+          ic('upload', 13) + ' ' + (hasFile ? 'Trocar Arquivo' : 'Escolher Arquivo') +
+        '</button>' +
+      '</div>' +
+      '<input type="file" id="dispFileInput" style="display:none;" accept="*/*">' +
+      (hasFile ?
+        '<div class="file-card">' +
+          '<div style="display:flex; align-items:flex-start; gap:12px;">' +
+            '<div style="width:40px; height:40px; border-radius:12px; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; flex:none;">' +
+              ic('file', 22) +
+            '</div>' +
+            '<div style="flex:1; min-width:0;">' +
+              '<b style="display:block; font-size:14px; color:var(--fg); word-break:break-all;">' + esc(activeFileName) + '</b>' +
+              '<span class="sm muted" style="display:block; margin-top:2px;">' + formatBytes(activeFileSize) + ' · ' + esc(activeMime) + '</span>' +
+              '<span class="sm okt" style="display:flex; align-items:center; gap:4px; margin-top:4px;">' +
+                ic('check', 12, 2.5) + ' Arquivo pronto · Substituição automática ativa sem duplicar' +
+              '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">' +
+            '<button class="btn ghost small" data-act="triggerFileInput" style="flex:1; min-height:34px; font-size:12px;">' + ic('upload', 13) + ' Substituir</button>' +
+            (downloadUrl ? '<a href="' + downloadUrl + '" class="btn ghost small" style="flex:1; min-height:34px; font-size:12px; text-decoration:none;" download="' + esc(activeFileName) + '">' + ic('download', 13) + ' Baixar</a>' : '') +
+            '<button class="btn danger small" data-act="removeFile" style="min-height:34px; font-size:12px;">' + ic('trash', 13) + ' Remover</button>' +
+          '</div>' +
+        '</div>'
+        :
+        '<div class="file-dropzone" data-act="triggerFileInput">' +
+          '<div style="width:44px; height:44px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:flex; align-items:center; justify-content:center; margin-bottom:4px;">' +
+            ic('upload', 22) +
+          '</div>' +
+          '<b style="font-size:14px; color:var(--fg);">Clique para escolher o arquivo</b>' +
+          '<span class="sm muted" style="line-height:1.4;">Suporta relatórios Excel (.xlsx, .xls), PDF, Word (.docx), CSV ou imagens.<br>Ao receber um novo relatório com mesmo nome, ele substitui automaticamente.</span>' +
+        '</div>'
+      ) +
+    '</div>';
+
+    // Seção de regras anti-duplicação
+    var dedupSectionHtml = '<div class="box">' +
+      '<div style="display:flex; align-items:center; gap:8px;">' +
+        '<span style="color:var(--accent);">' + ic('shield', 18) + '</span>' +
+        '<b style="font-size:14px;">Regras Anti-Duplicação & Arquivos com Mesmo Nome</b>' +
+      '</div>' +
+      '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">' +
+        '<div style="flex:1;">' +
+          '<b style="font-size:13px; display:block;">Evitar envio de arquivos idênticos</b>' +
+          '<span class="sm muted" style="display:block; margin-top:2px;">Se o arquivo recebido tiver exatamente o mesmo conteúdo do anterior, o envio duplicado ao grupo é cancelado automaticamente.</span>' +
+        '</div>' +
+        '<button class="sw" data-act="toggleDraftFlag" data-flag="preventDuplicates" aria-pressed="' + (d.preventDuplicates !== false ? 'true' : 'false') + '" aria-label="Evitar duplicados">' +
+          '<span class="track"><span class="knob"></span></span>' +
+        '</button>' +
+      '</div>' +
+      '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding-top:10px;">' +
+        '<div style="flex:1;">' +
+          '<b style="font-size:13px; display:block;">Substituição automática ao receber mesmo nome</b>' +
+          '<span class="sm muted" style="display:block; margin-top:2px;">Ex: Recebe <i>relatório manutenção</i> e após 1h chega outro atualizado: o sistema substitui o antigo pelo novo sem gerar cópias duplicadas.</span>' +
+        '</div>' +
+        '<button class="sw" data-act="toggleDraftFlag" data-flag="autoReplaceSameName" aria-pressed="' + (d.autoReplaceSameName !== false ? 'true' : 'false') + '" aria-label="Substituir automaticamente">' +
+          '<span class="track"><span class="knob"></span></span>' +
+        '</button>' +
+      '</div>' +
+      '<div class="field" style="border-top:1px solid var(--line); padding-top:10px;">' +
+        '<label class="lbl2">Janela de proteção contra relatórios repetidos:</label>' +
+        '<select data-field="duplicateWindowMinutes">' +
+          '<option value="0"' + (Number(d.duplicateWindowMinutes) === 0 ? ' selected' : '') + '>Sempre verificar (nunca reenviar arquivo idêntico)</option>' +
+          '<option value="30"' + (Number(d.duplicateWindowMinutes) === 30 ? ' selected' : '') + '>Bloquear duplicados dentro de 30 minutos</option>' +
+          '<option value="60"' + (Number(d.duplicateWindowMinutes) === 60 ? ' selected' : '') + '>Bloquear duplicados dentro de 1 hora (Recomendado para relatórios horários)</option>' +
+          '<option value="120"' + (Number(d.duplicateWindowMinutes) === 120 ? ' selected' : '') + '>Bloquear duplicados dentro de 2 horas</option>' +
+          '<option value="1440"' + (Number(d.duplicateWindowMinutes) === 1440 ? ' selected' : '') + '>Bloquear duplicados no mesmo dia (24 horas)</option>' +
+        '</select>' +
+      '</div>' +
+    '</div>';
+
+    $('#s-novo').innerHTML =
+      '<div class="bar">' +
+        '<button class="iconbtn" data-act="back" aria-label="Voltar">' + ic('back', 20) + '</button>' +
+        '<div class="bar-title"><h1>' + (edit ? 'Editar Disparo' : 'Novo Disparo') + '</h1></div>' +
+        (edit ? '<button class="iconbtn" data-act="delDispatch" style="color:var(--danger)" title="Excluir disparo">' + ic('trash', 20) + '</button>' : '<div></div>') +
+      '</div>' +
+      '<div class="body">' +
+        (edit ?
+          '<div class="stat" style="padding:12px 14px; background:var(--accent-soft); border-color:var(--accent-border);">' +
+            '<div class="ic" style="width:36px; height:36px;">' + ic('edit', 18) + '</div>' +
+            '<div><b>Editando: ' + esc(d.name || d.slug) + '</b><span>Altere as configurações, arquivo e regras abaixo</span></div>' +
+          '</div>'
+          : '') +
+
+        '<div class="field">' +
+          '<label for="dispName">Nome do Disparo</label>' +
+          '<input type="text" id="dispName" data-field="name" value="' + esc(d.name || '') + '" placeholder="Ex: Relatório Manutenção">' +
+        '</div>' +
+
+        '<div class="field">' +
+          '<span class="lbl2">Grupo WhatsApp de Destino</span>' +
+          '<button class="picker" data-act="pickGroup">' +
+            '<span class="l">' +
+              '<span class="avatar">' + (d.groupName ? d.groupName[0].toUpperCase() : '#') + '</span>' +
+              '<div>' +
+                '<b>' + (d.groupName ? esc(d.groupName) : 'Escolher Grupo de Destino') + '</b>' +
+                (d.groupJid ? '<div class="sm mono muted">' + esc(d.groupJid) + '</div>' : '') +
+              '</div>' +
+            '</span>' +
+            ic('chev', 18) +
+          '</button>' +
+        '</div>' +
+
+        fileSectionHtml +
+        dedupSectionHtml +
+
+        '<div class="field">' +
+          '<span class="lbl2">Tipo de Agendamento</span>' +
+          '<div class="seg">' +
+            '<button data-act="mode" data-v="fixed" aria-pressed="' + (d.mode === 'fixed' ? 'true' : 'false') + '">Horários Fixos</button>' +
+            '<button data-act="mode" data-v="interval" aria-pressed="' + (d.mode === 'interval' ? 'true' : 'false') + '">Intervalo Recorrente</button>' +
+          '</div>' +
+          whenHtml +
+        '</div>' +
+
+        '<div class="field">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+            '<label for="dispCaption">Legenda da Mensagem (Opcional)</label>' +
+            '<div style="display:flex; gap:4px;">' +
+              '<button class="btn ghost small" data-act="insertToken" data-token="{data}" style="min-height:24px; padding:0 6px; font-size:11px;">+{data}</button>' +
+              '<button class="btn ghost small" data-act="insertToken" data-token="{hora}" style="min-height:24px; padding:0 6px; font-size:11px;">+{hora}</button>' +
+            '</div>' +
+          '</div>' +
+          '<textarea id="dispCaption" data-field="caption" placeholder="Ex: Relatório Manutenção · {data} às {hora}">' + esc(d.caption || '') + '</textarea>' +
+          '<span class="sm muted">Tags disponíveis: <code>{data}</code> para data (DD/MM/AAAA) e <code>{hora}</code> para horário (HH:MM).</span>' +
+        '</div>' +
+
+        '<div class="field">' +
+          '<span class="lbl2">Status deste disparo</span>' +
+          '<div class="seg">' +
+            '<button data-act="setDraftActive" data-v="true" aria-pressed="' + (d.active ? 'true' : 'false') + '">' + ic('check', 14) + ' Ativo (executando)</button>' +
+            '<button data-act="setDraftActive" data-v="false" aria-pressed="' + (!d.active ? 'true' : 'false') + '">' + ic('x', 14) + ' Pausado</button>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="field">' +
+          '<span class="lbl2">Webhook HTTP para disparo remoto (Excel / n8n / API)</span>' +
+          '<div class="epbox">' +
+            '<span class="mono" id="epSlugDisplay">' + esc(fullWebhookUrl) + '</span>' +
+            '<button class="btn ghost small" data-act="copy" data-text="' + esc(fullWebhookUrl) + '">' + ic('copy', 14) + '</button>' +
+          '</div>' +
+          '<span class="sm muted">Envie arquivos via POST. Se o arquivo for igual, a anti-duplicação evita repetições no grupo. Se for uma nova versão do mesmo nome, ele substitui automaticamente.</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="foot">' +
+        '<button class="btn ghost" data-act="testDispatch">' + ic('send', 14) + ' Testar Envio</button>' +
+        '<button class="btn primary" data-act="save">' + ic('check', 16, 2.5) + (edit ? ' Salvar Alterações' : ' Criar Disparo') + '</button>' +
+      '</div>';
+  }
+
+  function renderGrupos() {
+    var q = norm(state.groupFilter || '');
+    var filtered = state.groups.filter(function (g) {
+      return !q || norm(g.name).includes(q) || (g.id && norm(g.id).includes(q));
+    });
+
+    $('#s-grupos').innerHTML =
+      '<div class="bar">' +
+        '<button class="iconbtn" data-act="backToNovo" aria-label="Voltar">' + ic('back', 20) + '</button>' +
+        '<div class="bar-title"><h1>Escolher Grupo</h1></div>' +
+        '<button class="btn ghost small" data-act="refreshGroups">' + ic('refresh', 14) + '</button>' +
+      '</div>' +
+      '<div class="body">' +
+        '<input type="search" placeholder="Buscar grupo por nome..." value="' + esc(state.groupFilter) + '" data-field="groupFilter">' +
+        '<div class="box">' +
+          '<span class="lbl2">Ou informar JID do grupo manualmente:</span>' +
+          '<div class="row">' +
+            '<input type="text" id="manualJid" placeholder="Ex: 120363413477898100@g.us">' +
+            '<button class="btn outline small" data-act="setManualGroup">Definir</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="glist">' +
+          (filtered.length ? filtered.map(function(g) {
+            return '<button class="gitem" data-act="setGroup" data-jid="' + esc(g.id) + '" data-name="' + esc(g.name) + '">' +
+              '<span class="avatar">' + esc((g.name || 'G')[0].toUpperCase()) + '</span>' +
+              '<span class="t">' +
+                '<b>' + esc(g.name) + '</b>' +
+                '<small>' + (g.participants || 0) + ' membros · ' + esc(g.id) + '</small>' +
+              '</span>' +
+            '</button>';
+          }).join('') : (state.groups.length ? '<div class="empty">Nenhum grupo corresponde à busca.</div>' : '<div class="empty">Nenhum grupo sincronizado ainda.<br>Verifique se o WhatsApp está conectado na aba <b>Conexão</b> ou digite o JID manualmente acima.</div>')) +
+        '</div>' +
+      '</div>';
+  }
+
+  var RENDER = {
+    home: renderHome,
+    hist: renderHist,
+    conn: renderConn,
+    novo: renderNovo,
+    grupos: renderGrupos
+  };
+
+  function show(name) {
+    state.screen = name;
+    document.querySelectorAll('.screen').forEach(function (s) {
+      s.hidden = s.id !== 's-' + name;
+    });
+    $('#nav').hidden = ['home', 'hist', 'conn'].indexOf(name) === -1;
+    RENDER[name]();
+    renderNav();
+  }
+
+  var A = {
+    tab: function (t) { show(t.dataset.tab); },
+    new: function () {
+      state.draft = {
+        name: '',
+        groupJid: '',
+        groupName: '',
+        mode: 'fixed',
+        times: ['08:00', '18:00'],
+        interval: 120,
+        caption: 'Relatório Manutenção · {data} {hora}',
+        newTime: '',
+        active: true,
+        preventDuplicates: true,
+        autoReplaceSameName: true,
+        duplicateWindowMinutes: 60,
+        lastMessage: null,
+        fileBase64: null,
+        fileName: '',
+        mimetype: '',
+        fileSize: 0,
+        removeFile: false
+      };
+      state.editingSlug = null;
+      show('novo');
+    },
+    edit: function (t) {
+      var s = t.dataset.slug;
+      var d = state.dispatches.find(function (x) { return x.slug === s; });
+      if (!d) return;
+      var times = [];
+      if (d.schedType === 'fixed' || d.schedType === 'times') {
+        times = Array.isArray(d.schedValue) ? d.schedValue : String(d.schedValue || '').split(',').map(function(x){return x.trim();}).filter(Boolean);
+      }
+      state.draft = {
+        slug: d.slug,
+        name: d.name,
+        groupJid: d.groupJid || '',
+        groupName: d.groupName || '',
+        mode: d.schedType === 'interval' ? 'interval' : 'fixed',
+        times: times.length ? times : ['08:00'],
+        interval: d.schedType === 'interval' ? Number(d.schedValue) || 120 : 120,
+        caption: d.caption || '',
+        newTime: '',
+        active: d.active !== false,
+        preventDuplicates: d.preventDuplicates !== false,
+        autoReplaceSameName: d.autoReplaceSameName !== false,
+        duplicateWindowMinutes: d.duplicateWindowMinutes !== undefined ? Number(d.duplicateWindowMinutes) : 60,
+        lastMessage: d.lastMessage || null,
+        fileBase64: null,
+        fileName: d.lastMessage ? d.lastMessage.fileName : '',
+        mimetype: d.lastMessage ? d.lastMessage.mimetype : '',
+        fileSize: d.lastMessage ? (d.lastMessage.fileSize || 0) : 0,
+        removeFile: false
+      };
+      state.editingSlug = s;
+      show('novo');
+    },
+    back: function () { show('home'); },
+    backToNovo: function () { show('novo'); },
+    pickGroup: function () { show('grupos'); },
+    setGroup: function (t) {
+      if (state.draft) {
+        state.draft.groupJid = t.dataset.jid;
+        state.draft.groupName = t.dataset.name;
+      }
+      show('novo');
+    },
+    setManualGroup: function () {
+      var val = ($('#manualJid') || {}).value || '';
+      val = val.trim();
+      if (!val) { toast('Informe um JID válido'); return; }
+      if (state.draft) {
+        state.draft.groupJid = val;
+        state.draft.groupName = val;
+      }
+      show('novo');
+    },
+    mode: function (t) {
+      if (state.draft) {
+        state.draft.mode = t.dataset.v;
+        renderNovo();
+      }
+    },
+    addTime: function () {
+      var input = $('#newTimeInput');
+      var val = (input ? input.value : '').trim();
+      if (val && state.draft) {
+        if (!state.draft.times.includes(val)) {
+          state.draft.times.push(val);
+          state.draft.times.sort();
+        }
+        state.draft.newTime = '';
+        renderNovo();
+      }
+    },
+    delTime: function (t) {
+      if (state.draft) {
+        state.draft.times = state.draft.times.filter(function (x) { return x !== t.dataset.t; });
+        renderNovo();
+      }
+    },
+    addPresetTime: function (t) {
+      var p = t.dataset.time;
+      if (p && state.draft) {
+        if (!state.draft.times.includes(p)) {
+          state.draft.times.push(p);
+          state.draft.times.sort();
+          renderNovo();
+        }
+      }
+    },
+    insertToken: function (t) {
+      var tok = t.dataset.token;
+      var ta = $('#dispCaption');
+      if (ta && state.draft) {
+        state.draft.caption = (state.draft.caption || '') + ' ' + tok;
+        ta.value = state.draft.caption;
+        ta.focus();
+      }
+    },
+    setDraftActive: function (t) {
+      if (state.draft) {
+        state.draft.active = t.dataset.v === 'true';
+        renderNovo();
+      }
+    },
+    toggleDraftFlag: function (t) {
+      var flag = t.dataset.flag;
+      if (state.draft && flag) {
+        state.draft[flag] = !(state.draft[flag] !== false);
+        renderNovo();
+      }
+    },
+    triggerFileInput: function () {
+      var fi = $('#dispFileInput');
+      if (fi) fi.click();
+    },
+    removeFile: function () {
+      if (state.draft) {
+        state.draft.removeFile = true;
+        state.draft.fileBase64 = null;
+        state.draft.fileName = '';
+        state.draft.fileSize = 0;
+        state.draft.mimetype = '';
+        state.draft.lastMessage = null;
+        toast('Arquivo removido do disparo');
+        renderNovo();
+      }
+    },
+    testCardDispatch: async function (t) {
+      var s = t.dataset.slug;
+      var d = state.dispatches.find(function (x) { return x.slug === s; });
+      if (!d) return;
+      if (!d.groupJid) { toast('Este disparo não tem grupo WhatsApp definido'); return; }
+      
+      toast('Disparando teste para "' + d.name + '"...');
+      try {
+        var payload = {
+          groupJid: d.groupJid,
+          caption: (d.caption || 'Teste de disparo') + ' · {data} {hora}',
+          force: true
+        };
+
+        if (d.lastMessage && d.lastMessage.fileBase64) {
+          payload.fileBase64 = d.lastMessage.fileBase64;
+          payload.fileName = d.lastMessage.fileName;
+          payload.mimetype = d.lastMessage.mimetype;
+        } else {
+          payload.fileBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+          payload.fileName = 'teste.png';
+          payload.mimetype = 'image/png';
+        }
+
+        var res = await api('/send/' + encodeURIComponent(s), {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        toast('Teste despachado com sucesso!');
+        addLog('Disparo manual executado: ' + d.name, 'ok');
+        pollBackendData();
+      } catch (e) {
+        toast('Falha ao disparar teste: ' + e.message);
+      }
+    },
+    save: async function () {
+      var d = state.draft;
+      if (!d.name || !d.name.trim()) { toast('Informe um nome para o disparo'); return; }
+      if (!d.groupJid) { toast('Selecione um grupo de destino'); return; }
+
+      var s = state.editingSlug || slug(d.name) || 'disparo';
+      var payload = {
+        name: d.name.trim(),
+        groupJid: d.groupJid,
+        groupName: d.groupName || d.groupJid,
+        schedType: d.mode === 'interval' ? 'interval' : 'fixed',
+        schedValue: d.mode === 'interval' ? String(d.interval) : (Array.isArray(d.times) ? d.times.join(',') : String(d.times || '08:00')),
+        caption: d.caption || '',
+        active: d.active !== false,
+        preventDuplicates: d.preventDuplicates !== false,
+        autoReplaceSameName: d.autoReplaceSameName !== false,
+        duplicateWindowMinutes: Number(d.duplicateWindowMinutes || 0)
+      };
+
+      if (d.fileBase64) {
+        payload.fileBase64 = d.fileBase64;
+        payload.fileName = d.fileName || 'arquivo';
+        payload.mimetype = d.mimetype;
+      } else if (d.removeFile) {
+        payload.removeFile = true;
+      }
+
+      try {
+        if (state.editingSlug) {
+          await api('/dispatches/' + encodeURIComponent(state.editingSlug), { method: 'PUT', body: JSON.stringify(payload) });
+          addLog('Disparo atualizado: ' + d.name, 'ok');
+          toast('Disparo atualizado com sucesso!');
+        } else {
+          await api('/dispatches', { method: 'POST', body: JSON.stringify(payload) });
+          addLog('Disparo criado: ' + d.name, 'ok');
+          toast('Novo disparo criado com sucesso!');
+        }
+        await pollBackendData();
+        show('home');
+      } catch (e) {
+        toast('Erro ao salvar disparo: ' + e.message);
+      }
+    },
+    delDispatch: async function () {
+      if (!state.editingSlug) return;
+      if (!confirm('Deseja excluir este disparo permanentemente?')) return;
+      try {
+        await api('/dispatches/' + encodeURIComponent(state.editingSlug), { method: 'DELETE' });
+        toast('Disparo excluído com sucesso');
+        await pollBackendData();
+        show('home');
+      } catch (e) {
+        toast('Erro ao excluir: ' + e.message);
+      }
+    },
+    toggle: async function (t) {
+      var s = t.dataset.slug;
+      var d = state.dispatches.find(function (x) { return x.slug === s; });
+      if (!d) return;
+      d.active = !d.active;
+      try {
+        await api('/dispatches/' + encodeURIComponent(s), { method: 'PUT', body: JSON.stringify(d) });
+        addLog('Status alterado: ' + d.name + ' (' + (d.active ? 'Ativo' : 'Pausado') + ')', 'ok');
+        renderHome();
+      } catch (e) {
+        toast('Erro ao alterar status');
+      }
+    },
+    refresh: function () {
+      pollBackendData().then(function() { toast('Dados atualizados'); });
+    },
+    refreshQR: async function () {
+      try {
+        var data = await api('/qr');
+        if (data.qr) {
+          state.qrImage = data.qr;
+          toast('QR Code atualizado');
+          renderConn();
+        } else {
+          toast(data.message || 'Aguardando QR Code...');
+        }
+      } catch (e) {
+        toast('Erro ao obter QR Code');
+      }
+    },
+    requestPairCode: async function () {
+      var phone = ($('#phoneInput') || {}).value || '';
+      phone = phone.replace(/\D/g, '');
+      if (!phone || phone.length < 10) { toast('Informe o telefone com DDD (Ex: 5511999998888)'); return; }
+      state.pairPhone = phone;
+      toast('Solicitando código de pareamento...');
+      try {
+        var res = await api('/pair-code', { method: 'POST', body: JSON.stringify({ phone: phone }) });
+        if (res.ok && res.code) {
+          state.pairCode = res.code;
+          toast('Código gerado com sucesso!');
+          renderConn();
+        } else {
+          toast(res.error || 'Falha ao gerar código');
+        }
+      } catch (e) {
+        toast('Erro ao obter código: ' + e.message);
+      }
+    },
+    testBackend: async function () {
+      try {
+        addLog('POST /test - Testando comunicação...', 'normal');
+        var res = await api('/test', { method: 'POST' });
+        toast(res.message || 'Backend respondendo com sucesso');
+        addLog('POST /test: ' + (res.message || 'OK'), 'ok');
+      } catch (e) {
+        toast('Falha ao testar conexão.');
+      }
+    },
+    testDispatch: async function () {
+      if (!state.draft) return;
+      if (!state.draft.groupJid) { toast('Escolha um grupo antes de testar.'); return; }
+      
+      toast('Enviando mensagem de teste...');
+      try {
+        var targetSlug = state.draft.slug || slug(state.draft.name) || 'teste';
+        var payload = {
+          groupJid: state.draft.groupJid,
+          caption: (state.draft.caption || 'Teste de disparo') + ' · {data} {hora}',
+          force: true
+        };
+
+        if (state.draft.fileBase64) {
+          payload.fileBase64 = state.draft.fileBase64;
+          payload.fileName = state.draft.fileName;
+          payload.mimetype = state.draft.mimetype;
+        } else if (state.draft.lastMessage && state.draft.lastMessage.fileBase64) {
+          payload.fileBase64 = state.draft.lastMessage.fileBase64;
+          payload.fileName = state.draft.lastMessage.fileName;
+          payload.mimetype = state.draft.lastMessage.mimetype;
+        } else {
+          payload.fileBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+          payload.fileName = 'teste.png';
+          payload.mimetype = 'image/png';
+        }
+
+        await api('/send/' + encodeURIComponent(targetSlug), {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        toast('Mensagem de teste despachada com sucesso!');
+        addLog('Disparo de teste enviado para ' + state.draft.groupJid, 'ok');
+      } catch (e) {
+        toast('Falha no envio de teste: ' + e.message);
+      }
+    },
+    clearHist: async function () {
+      if (!confirm('Deseja limpar todo o histórico?')) return;
+      try {
+        await api('/history', { method: 'DELETE' });
+        state.history = [];
+        renderHist();
+        toast('Histórico limpo');
+      } catch (e) {
+        toast('Erro ao limpar histórico');
+      }
+    },
+    refreshGroups: async function () {
+      toast('Buscando grupos do WhatsApp...');
+      try {
+        var data = await api('/groups');
+        state.groups = data.groups || [];
+        renderGrupos();
+        toast(state.groups.length + ' grupos encontrados');
+      } catch (e) {
+        toast('Erro ao buscar grupos');
+      }
+    },
+    copy: function (t) { copyText(t.dataset.text); },
+    tok: function () { state.tokenShown = !state.tokenShown; renderConn(); },
+    editToken: async function () {
+      var novo = prompt('Defina o novo token de segurança:', TOKEN);
+      if (novo !== null && novo.trim() && novo.trim() !== TOKEN) {
+        novo = novo.trim();
+        try {
+          await api('/config', { method: 'POST', body: JSON.stringify({ token: novo }) });
+          TOKEN = novo;
+          localStorage.setItem('disparador_token', novo);
+          toast('Token atualizado com sucesso!');
+          renderConn();
+        } catch (e) {
+          toast('Erro ao atualizar token: ' + e.message);
+        }
+      }
+    },
+    logout: async function () {
+      if (!confirm('Deseja desconectar a sessão do WhatsApp e gerar novo QR Code?')) return;
+      try {
+        await api('/reset-session', { method: 'POST' });
+        toast('Sessão reiniciada. Aguarde o novo QR Code...');
+        state.waStatus = 'needsPairing';
+        state.qrImage = null;
+        renderConn();
+        setTimeout(pollBackendData, 2500);
+      } catch (e) {
+        toast('Erro ao desconectar: ' + e.message);
+      }
+    }
+  };
+
+  document.addEventListener('click', function (ev) {
+    var t = ev.target.closest('[data-act]');
+    if (t && A[t.dataset.act]) A[t.dataset.act](t);
+  });
+
+  function handleFileInputChange(ev) {
+    var fi = ev.target;
+    if (fi.id !== 'dispFileInput') return;
+    var file = fi.files && fi.files[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      toast('Arquivo muito grande! Tamanho máximo: 25 MB.');
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var dataUrl = e.target.result;
+      var commaIdx = dataUrl.indexOf(',');
+      var b64 = commaIdx !== -1 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+
+      if (state.draft) {
+        state.draft.fileBase64 = b64;
+        state.draft.fileName = file.name;
+        state.draft.mimetype = file.type || 'application/octet-stream';
+        state.draft.fileSize = file.size;
+        state.draft.removeFile = false;
+        
+        // Se o nome do disparo ainda estiver vazio, preenche com o nome do arquivo
+        if (!state.draft.name || !state.draft.name.trim()) {
+          state.draft.name = file.name.replace(/\.[^/.]+$/, '');
+          var nameInput = $('#dispName');
+          if (nameInput) nameInput.value = state.draft.name;
+        }
+
+        toast('Arquivo "' + file.name + '" carregado com sucesso!');
+        renderNovo();
+      }
     };
-    try {
-      await api('/send/' + (slug(d.name) || 'novo'), { method: 'POST', body: JSON.stringify(payload) });
-      addLog('Disparo salvo com sucesso: ' + d.name, 'ok');
-      toast('Salvo com sucesso no servidor');
-      pollBackendData();
-      show('home');
-    } catch (e) {
-      toast('Erro ao salvar no servidor');
-    }
-  },
-  toggle: async function (t) {
-    var id = t.dataset.id;
-    var d = state.dispatches.filter(function (x) { return x.id == id; })[0];
-    if (!d) return;
-    d.active = !d.active;
-    var payload = {
-      name: d.name,
-      groupName: d.group,
-      schedType: d.mode,
-      schedValue: d.mode === 'interval' ? d.interval : d.times,
-      active: d.active
+    reader.onerror = function () {
+      toast('Erro ao carregar o arquivo');
     };
-    try {
-      await api('/send/' + slug(d.name), { method: 'POST', body: JSON.stringify(payload) });
-      addLog('Status alterado para: ' + (d.active ? 'Ativo' : 'Pausado'), 'ok');
-      renderHome();
-    } catch (e) {
-      toast('Erro ao atualizar status');
-    }
-  },
-  test: async function () {
-    try {
-      addLog('POST /test - Enviando teste manual...', 'normal');
-      var res = await api('/test', { method: 'POST' });
-      toast('Teste acionado com sucesso!');
-      addLog('POST /test 200 OK', 'ok');
-    } catch (e) {
-      toast('Falha na rota de teste.');
-    }
-  },
-  copy: function (t) { copyText(t.dataset.text); },
-  tok: function () { state.tokenShown = !state.tokenShown; renderConn(); },
-  logout: async function () {
-    if (!confirm('Tem certeza que deseja desconectar o WhatsApp atual?')) return;
-    try {
-      await api('/reset-session', { method: 'POST' });
-      toast('Desconectado! Aguarde a geração do novo QR Code...');
-      state.qr = true;
-      state.waStatus = 'aguardando';
-      renderConn();
-    } catch (e) {
-      toast('Erro ao tentar desconectar.');
-    }
-  },
-  qr: function () { state.qr = !state.qr; renderConn(); }
-};
+    reader.readAsDataURL(file);
+  }
 
-document.addEventListener('click', function (ev) {
-  var t = ev.target.closest('[data-act]');
-  if (t && A[t.dataset.act]) A[t.dataset.act](t);
-});
+  document.addEventListener('change', function (ev) {
+    if (ev.target && ev.target.id === 'dispFileInput') {
+      handleFileInputChange(ev);
+    }
+  });
 
-document.addEventListener('input', function (ev) {
-  var f = ev.target.dataset && ev.target.dataset.field;
-  if (f && state.draft) state.draft[f] = ev.target.value;
-});
+  function handleFieldInput(ev) {
+    var f = ev.target.dataset && ev.target.dataset.field;
+    if (f) {
+      if (f === 'groupFilter') {
+        state.groupFilter = ev.target.value;
+        renderGrupos();
+      } else if (state.draft) {
+        state.draft[f] = ev.target.value;
+        if (f === 'name') {
+          var ep = $('#epSlugDisplay');
+          var targetSlug = state.draft.slug || slug(ev.target.value) || 'meu-disparo';
+          if (ep) ep.textContent = window.location.origin + '/send/' + targetSlug;
+        }
+      }
+    }
+  }
 
-show('home');
+  document.addEventListener('input', handleFieldInput);
+  document.addEventListener('change', handleFieldInput);
+
+  show('home');
 })();
 </script>
 </body>
 </html>
-

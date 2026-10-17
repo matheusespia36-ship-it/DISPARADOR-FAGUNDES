@@ -1,0 +1,8 @@
+{
+  "name": "Disparador WhatsApp",
+  "description": "Disparador e agendador automático de relatórios e mensagens para grupos de WhatsApp com integração Baileys.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
